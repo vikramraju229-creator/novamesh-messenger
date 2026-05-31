@@ -205,4 +205,11 @@
     <string name="channel_stories_desc">Story updates from contacts</string>
     <string name="channel_sync">Sync</string>
     <string name="channel_sync_desc">Background sync notifications</string>
+
+    <!-- Sync Service -->
+    <string name="sync_notification_title">Syncing NovaMesh</string>
+    <string name="sync_disconnected">Disconnected</string>
+    <string name="sync_connecting">Connecting…</string>
+    <string name="sync_in_progress">Syncing messages…</string>
+    <string name="sync_error">Sync error</string>
 </resources>

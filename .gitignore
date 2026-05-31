@@ -56,8 +56,8 @@ lint/intermediates/
 # ─── Room schemas (generated) ───
 app/schemas/
 
-# ─── Navigation preview ───
-navigation/
+# ─── Navigation preview (Android Studio generated) ───
+/navigation/
 
 # ─── Temporary files ───
 *.tmp
