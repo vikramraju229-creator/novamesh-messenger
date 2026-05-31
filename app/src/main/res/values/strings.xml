@@ -212,4 +212,11 @@
     <string name="sync_connecting">Connecting…</string>
     <string name="sync_in_progress">Syncing messages…</string>
     <string name="sync_error">Sync error</string>
+
+    <!-- Story notifications -->
+    <string name="story_new_photo">%s posted a new photo story</string>
+    <string name="story_new_video">%s posted a new video story</string>
+    <string name="story_new_text">%s posted a text story</string>
+    <string name="story_new_update">%s posted a story update</string>
+    <string name="story_update">Story Update</string>
 </resources>

@@ -220,7 +220,7 @@ class SyncService : Service() {
         var backoffMs = INITIAL_BACKOFF_MS
         var consecutiveErrors = 0
 
-        while (isActive) {
+        while (kotlinx.coroutines.currentCoroutineContext().isActive) {
             // Check network
             if (!isNetworkAvailable) {
                 syncState = SyncState.DISCONNECTED

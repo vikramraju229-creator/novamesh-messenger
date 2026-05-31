@@ -169,6 +169,9 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
 
+    // ─── Timber (logging) ───
+    implementation("com.jakewharton.timber:timber:5.0.1")
+
     // ─── Coil (image loading) ───
     implementation("io.coil-kt:coil-compose:$coilVersion")
     implementation("io.coil-kt:coil-video:$coilVersion")
