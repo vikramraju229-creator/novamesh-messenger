@@ -219,4 +219,12 @@
     <string name="story_new_text">%s posted a text story</string>
     <string name="story_new_update">%s posted a story update</string>
     <string name="story_update">Story Update</string>
+
+    <!-- Message notifications -->
+    <string name="notification_mark_read">Mark as read from %s</string>
+    <string name="notification_group_summary">%s and others</string>
+
+    <!-- Call controls -->
+    <string name="video_off">Video Off</string>
+    <string name="video_on">Video On</string>
 </resources>
