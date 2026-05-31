@@ -1,0 +1,208 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">NovaMesh</string>
+    <string name="app_full_name">NovaMesh Messenger</string>
+    <string name="app_tagline">Connect Freely. Chat Securely.</string>
+
+    <!-- Navigation -->
+    <string name="nav_chats">Chats</string>
+    <string name="nav_stories">Stories</string>
+    <string name="nav_discover">Discover</string>
+    <string name="nav_profile">Profile</string>
+    <string name="nav_camera">Camera</string>
+    <string name="nav_calls">Calls</string>
+    <string name="nav_settings">Settings</string>
+
+    <!-- Chat -->
+    <string name="new_chat">New Chat</string>
+    <string name="new_group">New Group</string>
+    <string name="search_messages">Search messages…</string>
+    <string name="type_message">Type a message…</string>
+    <string name="voice_message">Voice message</string>
+    <string name="send">Send</string>
+    <string name="attachment">Attachment</string>
+    <string name="emoji">Emoji</string>
+    <string name="reply">Reply</string>
+    <string name="forward">Forward</string>
+    <string name="copy">Copy</string>
+    <string name="delete">Delete</string>
+    <string name="pin">Pin</string>
+    <string name="star">Star</string>
+    <string name="share">Share</string>
+    <string name="report">Report</string>
+    <string name="archive">Archive</string>
+    <string name="mute">Mute</string>
+    <string name="block">Block</string>
+    <string name="clear_chat">Clear Chat</string>
+    <string name="export_chat">Export Chat</string>
+
+    <!-- Camera / Snap -->
+    <string name="flip_camera">Flip camera</string>
+    <string name="capture">Capture</string>
+    <string name="record_video">Record video</string>
+    <string name="add_sticker">Add sticker</string>
+    <string name="add_text">Add text</string>
+    <string name="draw">Draw</string>
+    <string name="flash_on">Flash on</string>
+    <string name="flash_off">Flash off</string>
+    <string name="timer">Timer</string>
+    <string name="self_destruct_timer">Self-destruct timer</string>
+    <string name="send_snap">Send Snap</string>
+    <string name="add_to_story">Add to Story</string>
+    <string name="save_to_gallery">Save to Gallery</string>
+    <string name="discard">Discard</string>
+
+    <!-- Stories -->
+    <string name="my_story">My Story</string>
+    <string name="add_story">Add to story</string>
+    <string name="story_viewed_by">Viewed by</string>
+    <string name="story_reply">Reply to story</string>
+    <string name="story_privacy">Story privacy</string>
+    <string name="story_all_contacts">All Contacts</string>
+    <string name="story_custom">Custom</string>
+    <string name="story_except">Except…</string>
+    <string name="no_stories">No stories yet</string>
+
+    <!-- Calls -->
+    <string name="voice_call">Voice call</string>
+    <string name="video_call">Video call</string>
+    <string name="incoming_call">Incoming call…</string>
+    <string name="accept">Accept</string>
+    <string name="decline">Decline</string>
+    <string name="end_call">End call</string>
+    <string name="mute_call">Mute</string>
+    <string name="speaker">Speaker</string>
+    <string name="hold_call">Hold</string>
+    <string name="add_participant">Add participant</string>
+    <string name="noise_cancellation">Noise cancellation</string>
+    <string name="blur_background">Blur background</string>
+    <string name="call_recording">Record call</string>
+
+    <!-- Security -->
+    <string name="app_lock">App Lock</string>
+    <string name="biometric_unlock">Unlock with biometric</string>
+    <string name="pin_unlock">Unlock with PIN</string>
+    <string name="enter_pin">Enter your PIN</string>
+    <string name="create_pin">Create a PIN</string>
+    <string name="confirm_pin">Confirm PIN</string>
+    <string name="pin_mismatch">PINs don\'t match</string>
+    <string name="incorrect_pin">Incorrect PIN</string>
+    <string name="lock_immediately">Immediately</string>
+    <string name="lock_after_1min">After 1 minute</string>
+    <string name="lock_after_5min">After 5 minutes</string>
+    <string name="encryption_enabled">End-to-end encrypted</string>
+    <string name="fingerprint_hint">Touch the fingerprint sensor</string>
+    <string name="face_unlock_hint">Look at the camera to unlock</string>
+    <string name="app_is_locked">NovaMesh is locked</string>
+    <string name="unlock">Unlock</string>
+    <string name="two_factor_auth">Two-Factor Authentication</string>
+    <string name="setup_2fa">Set up 2FA</string>
+    <string name="verify_2fa">Enter 6-digit code</string>
+    <string name="qr_code">Scan QR Code</string>
+
+    <!-- Profile -->
+    <string name="profile">Profile</string>
+    <string name="name">Name</string>
+    <string name="about">About</string>
+    <string name="phone_number">Phone number</string>
+    <string name="username">Username</string>
+    <string name="set_profile_photo">Set profile photo</string>
+    <string name="take_photo">Take photo</string>
+    <string name="choose_from_gallery">Choose from gallery</string>
+    <string name="remove_photo">Remove photo</string>
+    <string name="save">Save</string>
+    <string name="cancel">Cancel</string>
+    <string name="logout">Log Out</string>
+    <string name="delete_account">Delete Account</string>
+
+    <!-- Status / Presence -->
+    <string name="online">Online</string>
+    <string name="offline">Offline</string>
+    <string name="last_seen">Last seen</string>
+    <string name="typing">typing…</string>
+    <string name="recording">recording…</string>
+
+    <!-- Permissions -->
+    <string name="camera_permission_title">Camera access needed</string>
+    <string name="camera_permission_desc">NovaMesh needs camera access for snaps, stories, and video calls</string>
+    <string name="microphone_permission_title">Microphone access needed</string>
+    <string name="microphone_permission_desc">NovaMesh needs microphone access for voice messages and calls</string>
+    <string name="storage_permission_title">Storage access needed</string>
+    <string name="storage_permission_desc">NovaMesh needs storage access to send and save media</string>
+    <string name="notification_permission_title">Notifications needed</string>
+    <string name="notification_permission_desc">NovaMesh needs notification access to alert you of new messages</string>
+    <string name="contacts_permission_title">Contacts access needed</string>
+    <string name="contacts_permission_desc">NovaMesh needs your contacts to help you connect with friends</string>
+    <string name="grant">Grant</string>
+    <string name="deny">Deny</string>
+    <string name="not_now">Not now</string>
+
+    <!-- Errors -->
+    <string name="error_general">Something went wrong</string>
+    <string name="error_network">Network error. Check your connection.</string>
+    <string name="error_camera">Cannot access camera</string>
+    <string name="error_microphone">Cannot access microphone</string>
+    <string name="error_file_too_large">File too large (max 2GB)</string>
+    <string name="error_unsupported_file">Unsupported file type</string>
+    <string name="error_no_internet">No internet connection</string>
+    <string name="error_send_failed">Failed to send message</string>
+    <string name="error_upload_failed">Failed to upload file</string>
+    <string name="error_decryption_failed">Message decryption failed</string>
+    <string name="error_session_expired">Session expired. Please log in again.</string>
+
+    <!-- Time -->
+    <string name="just_now">Just now</string>
+    <string name="minutes_ago">%d min ago</string>
+    <string name="hours_ago">%d h ago</string>
+    <string name="yesterday">Yesterday</string>
+    <string name="days_ago">%d d ago</string>
+
+    <!-- Miscellaneous -->
+    <string name="search">Search</string>
+    <string name="more">More</string>
+    <string name="close">Close</string>
+    <string name="retry">Retry</string>
+    <string name="done">Done</string>
+    <string name="skip">Skip</string>
+    <string name="next">Next</string>
+    <string name="continue_text">Continue</string>
+    <string name="loading">Loading…</string>
+    <string name="no_chats">No chats yet</string>
+    <string name="start_new_chat">Start a new conversation</string>
+    <string name="no_messages">No messages here yet</string>
+    <string name="say_hello">Say hello!</string>
+    <string name="empty_state_title">Welcome to NovaMesh</string>
+    <string name="empty_state_desc">Your private, encrypted messaging hub</string>
+    <string name="snap_streak">Streak</string>
+    <string name="disappearing_messages">Disappearing messages</string>
+    <string name="message_timer">Message timer</string>
+    <string name="ghost_mode">Ghost Mode</string>
+    <string name="read_receipts">Read receipts</string>
+    <string name="blocked_contacts">Blocked contacts</string>
+    <string name="notification_sounds">Notification sounds</string>
+    <string name="chat_wallpaper">Chat wallpaper</string>
+    <string name="theme">Theme</string>
+    <string name="system_default">System default</string>
+    <string name="light">Light</string>
+    <string name="dark">Dark</string>
+    <string name="accent_color">Accent color</string>
+    <string name="data_usage">Data usage</string>
+    <string name="storage_usage">Storage usage</string>
+    <string name="help">Help</string>
+    <string name="about_app">About NovaMesh</string>
+    <string name="version">Version %s</string>
+    <string name="privacy_policy">Privacy Policy</string>
+    <string name="terms_of_service">Terms of Service</string>
+    <string name="open_source_licenses">Open Source Licenses</string>
+    <string name="app_icon_hd">@string/app_name</string>
+
+    <!-- Notification Channels -->
+    <string name="channel_messages">Messages</string>
+    <string name="channel_messages_desc">New message notifications</string>
+    <string name="channel_calls">Calls</string>
+    <string name="channel_calls_desc">Incoming call notifications</string>
+    <string name="channel_stories">Stories</string>
+    <string name="channel_stories_desc">Story updates from contacts</string>
+    <string name="channel_sync">Sync</string>
+    <string name="channel_sync_desc">Background sync notifications</string>
+</resources>

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  NovaMesh Messenger — Launcher Icon Foreground
+  Stylized "N" letter in the brand purple color.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Outer circle background -->
+    <path
+        android:fillColor="#7C4DFF"
+        android:pathData="M54,54m-40,0a40,40 0,1 1,80 0a40,40 0,1 1,-80 0" />
+
+    <!-- Letter "N" in white -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M38,68V40L56,60V40L70,68V40" />
+</vector>

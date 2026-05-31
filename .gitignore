@@ -1,0 +1,77 @@
+# ─── Build artifacts ───
+build/
+.gradle/
+*.jks
+*.keystore
+*.apk
+*.aab
+*.ap_
+*.dex
+*.class
+*.log
+*.hprof
+*.snap
+*.ctxt
+
+# ─── IDE ───
+.idea/
+*.iml
+*.iws
+*.ipr
+.DS_Store
+Thumbs.db
+local.properties
+
+# ─── Kotlin ───
+*.kotlin_module
+
+# ─── C/C++ (NDK) ───
+.obj/
+*.o
+*.so
+*.dylib
+
+# ─── Git / GitHub ───
+*.orig
+*.bak
+*~
+
+# ─── Environment & Secrets ───
+.env
+.env.local
+*.env
+secrets.properties
+credentials.properties
+
+# ─── Firebase ───
+google-services.json
+firebase-secrets.json
+app/google-services.json
+
+# ─── Android specific ───
+/captures
+.externalNativeBuild
+.cxx
+lint/reports/
+lint/intermediates/
+
+# ─── Room schemas (generated) ───
+app/schemas/
+
+# ─── Navigation preview ───
+navigation/
+
+# ─── Temporary files ───
+*.tmp
+*.swp
+*.swo
+*~
+
+# ─── Editor / OS ───
+.vscode/
+.idea/shelf*
+.idea/workspace.xml
+.idea/tasks.xml
+
+# ─── Gradle wrapper (keep jar but not properties) ───
+!gradle/wrapper/gradle-wrapper.jar
