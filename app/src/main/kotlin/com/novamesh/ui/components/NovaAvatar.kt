@@ -147,7 +147,7 @@ fun NovaAvatar(
                     Text(
                         text = initial,
                         style = MaterialTheme.typography.titleMedium.copy(
-                            fontSize = size.fontSize.sp,
+                            fontSize = avatarSize.fontSize.sp,
                             fontWeight = FontWeight.Bold,
                         ),
                         color = MaterialTheme.colorScheme.onPrimaryContainer,
@@ -159,20 +159,20 @@ fun NovaAvatar(
 
         // ── Online dot ────────────────────────────────────────────────
         if (isOnline) {
-            Box(
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .size(size.dotSize + 4.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.surface), // white ring
-                contentAlignment = Alignment.Center,
-            ) {
                 Box(
                     modifier = Modifier
-                        .size(size.dotSize)
+                        .align(Alignment.BottomEnd)
+                        .size(avatarSize.dotSize + 4.dp)
                         .clip(CircleShape)
-                        .background(NovaSuccess),
-                )
+                        .background(MaterialTheme.colorScheme.surface), // white ring
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(avatarSize.dotSize)
+                            .clip(CircleShape)
+                            .background(NovaSuccess),
+                    )
             }
         }
 
@@ -233,11 +233,11 @@ fun NovaAvatarStack(
 
     Box(modifier = modifier) {
         visible.forEachIndexed { index, uri ->
-            val offset = index * (size.size.value * 0.6f).dp
+            val offset = (index * size.size.value * 0.6f).dp
             NovaAvatar(
                 imageUri = uri,
                 displayName = displayNames.getOrElse(index) { "?" },
-                size = size,
+                avatarSize = size,
                 modifier = Modifier.padding(start = offset),
             )
         }

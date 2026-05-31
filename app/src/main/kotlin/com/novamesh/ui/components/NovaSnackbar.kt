@@ -80,7 +80,6 @@ private fun NovaSnackbar(snackbarData: SnackbarData) {
         containerColor = MaterialTheme.colorScheme.surface,
         contentColor = MaterialTheme.colorScheme.onSurface,
         shape = RoundedCornerShape(12.dp),
-        tonalElevation = 6.dp,
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
