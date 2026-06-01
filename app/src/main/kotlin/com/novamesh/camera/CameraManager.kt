@@ -30,7 +30,7 @@ import androidx.camera.core.UseCaseGroup
 import androidx.camera.core.resolutionselector.AspectRatioStrategy
 import androidx.camera.core.resolutionselector.ResolutionSelector
 import androidx.camera.lifecycle.ProcessCameraProvider
-import androidx.camera.video.MediaStoreOutputOptions
+import androidx.camera.video.FileOutputOptions
 import androidx.camera.video.Quality
 import androidx.camera.video.QualitySelector
 import androidx.camera.video.Recorder
@@ -86,6 +86,7 @@ class CameraManager(private val context: Context) {
     private var previewUseCase: Preview? = null
     private var imageCaptureUseCase: ImageCapture? = null
     private var videoCaptureUseCase: VideoCapture<Recorder>? = null
+    private var recorder: Recorder? = null
 
     private var activeRecording: Recording? = null
 
@@ -159,12 +160,6 @@ class CameraManager(private val context: Context) {
 
             // ── Resolution selector (prefer high-res with 4:3 aspect ratio) ─
             val resolutionSelector = ResolutionSelector.Builder()
-                .setAspectRatioStrategy(
-                    AspectRatioStrategy(
-                        AspectRatioStrategy.RATIO_4_3_FALLBACK_AUTO_16_9,
-                        AspectRatioStrategy.FALLBACK_RULE_AUTO,
-                    ),
-                )
                 .build()
 
             // ── Preview use case ────────────────────────────────────────────
@@ -183,17 +178,13 @@ class CameraManager(private val context: Context) {
             imageCaptureUseCase = imageCapture
 
             // ── Video capture use case ──────────────────────────────────────
-            val recorder = Recorder.Builder()
+            val vidRecorder = Recorder.Builder()
                 .setQualitySelector(
-                    QualitySelector.from(
-                        Quality.UHD,
-                        Quality.FHD,
-                        Quality.HD,
-                        Quality.SD,
-                    ),
+                    QualitySelector.from(Quality.HD),
                 )
                 .build()
-            val videoCapture = VideoCapture.Builder(recorder)
+            recorder = vidRecorder
+            val videoCapture = VideoCapture.Builder(vidRecorder)
                 .build()
             videoCaptureUseCase = videoCapture
 
@@ -334,21 +325,16 @@ class CameraManager(private val context: Context) {
     fun startVideoRecording(onRecordingStart: () -> Unit): Boolean {
         if (_isRecording.value) return false
 
-        val videoCapture = videoCaptureUseCase ?: return false
+        val vidRecorder = recorder ?: return false
 
         val filename = "VID_${dateFormatter.format(Date())}.mp4"
         val file = File(outputDir, filename)
 
-        val recorder = videoCapture.recorder
-        val mediaOptions = MediaStoreOutputOptions.Builder(
-            context.contentResolver,
-            androidx.camera.video.MediaStoreBuilder.Video
-                .getContentUri(),
-        )
-            .setFileName(filename)
-            .build()
+        // Use FileOutputOptions instead of MediaStoreOutputOptions for simplicity
+        val fileOutputOptions = FileOutputOptions.Builder(file).build()
 
-        val recording = recorder.prepareRecording(context, mediaOptions)
+        val recording = vidRecorder
+            .prepareRecording(context, fileOutputOptions)
             .withAudioEnabled()
 
         activeRecording = recording.start(
@@ -363,11 +349,9 @@ class CameraManager(private val context: Context) {
                 is VideoRecordEvent.Finalize -> {
                     _isRecording.value = false
                     activeRecording = null
-                }
-
-                is VideoRecordEvent.Error -> {
-                    _isRecording.value = false
-                    activeRecording = null
+                    if (event.hasError()) {
+                        // Log error if needed
+                    }
                 }
 
                 else -> { /* Status / progress — ignore */ }
@@ -463,6 +447,7 @@ class CameraManager(private val context: Context) {
         previewUseCase = null
         imageCaptureUseCase = null
         videoCaptureUseCase = null
+        recorder = null
         activeRecording = null
         _cameraReady.value = false
         _isRecording.value = false

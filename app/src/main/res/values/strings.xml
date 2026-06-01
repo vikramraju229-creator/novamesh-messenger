@@ -228,6 +228,8 @@
     <string name="video_off">Video Off</string>
     <string name="video_on">Video On</string>
     <string name="connecting">Connecting…</string>
+    <string name="connecting_call">Connecting call…</string>
+    <string name="call_on_hold">Call on hold</string>
     <string name="muted">Muted</string>
     <string name="call_in_progress">Call in progress</string>
     <string name="on_hold">On hold</string>

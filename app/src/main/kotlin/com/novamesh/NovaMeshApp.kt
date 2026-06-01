@@ -85,7 +85,8 @@ class NovaMeshApp : Application(), ImageLoaderFactory {
             description = getString(R.string.channel_calls_desc)
             setShowBadge(false)
             enableVibration(true)
-            setFullScreenActionRequired(true)
+            // setFullScreenActionRequired removed in API 36+
+            // Use full-screen intent for incoming calls instead
         }
 
         // Stories channel

@@ -147,7 +147,7 @@ class CallService : Service() {
     // Proximity sensor listener
     // ------------------------------------------------------------------
 
-    private val proximityListener = SensorEventListener {
+    private val proximityListener = object : SensorEventListener {
         override fun onSensorChanged(event: SensorEvent) {
             if (event.sensor.type == Sensor.TYPE_PROXIMITY) {
                 val newValue = event.values[0] < proximitySensor?.maximumRange ?: 1f

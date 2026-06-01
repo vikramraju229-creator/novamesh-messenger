@@ -6,12 +6,6 @@ import com.novamesh.data.local.entity.ChatEntity
 import com.novamesh.data.local.entity.MessageEntity
 import com.novamesh.data.local.entity.UserEntity
 import com.novamesh.data.remote.MatrixRepository
-import com.novamesh.domain.model.Message
-import com.novamesh.domain.model.MessageContent
-import com.novamesh.domain.model.MessageStatus
-import com.novamesh.domain.model.MessageType
-import com.novamesh.domain.model.User
-import com.novamesh.domain.model.UserPresence
 import com.novamesh.security.SignalProtocolManager
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -194,22 +188,29 @@ class MessageRepository(
         return try {
             val remoteMessages = matrixRepository.getMessages(chatId)
             // Collect the flow once
-            val messages = mutableListOf<Message>()
             remoteMessages.collect { batch ->
-                messages.addAll(batch)
-                return@collect // only take first emission for sync
-            }
-
-            for (msg in messages) {
-                val entity = msg.toEntity()
-                // Decrypt if needed
-                val decryptedContent = if (entity.encryptionType != "NONE") {
-                    signalProtocolManager.decrypt(entity.content, chatId)
-                } else {
-                    entity.content
+                for (matrixMsg in batch) {
+                    // Convert MatrixMessage to MessageEntity
+                    val entity = MessageEntity(
+                        id = matrixMsg.eventId,
+                        chatId = chatId,
+                        senderId = matrixMsg.senderId,
+                        content = matrixMsg.body,
+                        type = matrixMsg.type,
+                        timestamp = matrixMsg.timestamp,
+                        status = "SENT",
+                        encryptionType = "NONE",
+                    )
+                    // Decrypt if needed
+                    val decryptedContent = if (entity.encryptionType != "NONE") {
+                        signalProtocolManager.decrypt(entity.content, chatId)
+                    } else {
+                        entity.content
+                    }
+                    val decryptedEntity = entity.copy(content = decryptedContent)
+                    messageDao.insertMessage(decryptedEntity)
                 }
-                val decryptedEntity = entity.copy(content = decryptedContent)
-                messageDao.insertMessage(decryptedEntity)
+                return@collect // only take first emission for sync
             }
 
             Result.success(Unit)
@@ -252,18 +253,17 @@ class MessageRepository(
         senderId: String,
         timestamp: Long,
     ) {
-        val preview = when (content) {
-            is MessageContent.Text -> content.text.take(100)
-            is MessageContent.Image -> "🖼 Photo"
-            is MessageContent.Video -> "🎬 Video"
-            is MessageContent.Audio -> "🎵 Audio"
-            is MessageContent.File -> "📎 ${content.fileName}"
-            is MessageContent.Location -> "📍 Location"
-            is MessageContent.Sticker -> "🎨 Sticker"
-            is MessageContent.Gif -> "GIF"
-            is MessageContent.Call -> "📞 ${content.callType} call"
-            is MessageContent.System -> content.text
-            else -> "New message"
+        val preview = when (content.type) {
+            MessageType.TEXT -> (content as? PlaceholderModels.MessageContent.Text)?.text?.take(100) ?: "Text"
+            MessageType.IMAGE -> "🖼 Photo"
+            MessageType.VIDEO -> "🎬 Video"
+            MessageType.AUDIO -> "🎵 Audio"
+            MessageType.FILE -> "📎 ${(content as? PlaceholderModels.MessageContent.File)?.fileName ?: "File"}"
+            MessageType.LOCATION -> "📍 Location"
+            MessageType.STICKER -> "🎨 Sticker"
+            MessageType.GIF -> "GIF"
+            MessageType.CALL -> "📞 ${(content as? PlaceholderModels.MessageContent.Call)?.callType ?: ""} call"
+            MessageType.SYSTEM -> (content as? PlaceholderModels.MessageContent.System)?.text ?: "System"
         }
         chatDao.updateLastMessage(chatId, preview, timestamp, senderId)
     }

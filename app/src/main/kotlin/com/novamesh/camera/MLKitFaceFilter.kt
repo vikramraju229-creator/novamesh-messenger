@@ -342,7 +342,24 @@ class MLKitFaceFilter {
         val contours = mutableMapOf<Int, List<PointF>>()
 
         // Extract all available contours
-        FaceContour.ALL_CONTOURS.forEach { contourType ->
+        val allContourTypes = listOf(
+            FaceContour.FACE,
+            FaceContour.LEFT_EYEBROW_TOP,
+            FaceContour.LEFT_EYEBROW_BOTTOM,
+            FaceContour.RIGHT_EYEBROW_TOP,
+            FaceContour.RIGHT_EYEBROW_BOTTOM,
+            FaceContour.LEFT_EYE,
+            FaceContour.RIGHT_EYE,
+            FaceContour.UPPER_LIP_TOP,
+            FaceContour.UPPER_LIP_BOTTOM,
+            FaceContour.LOWER_LIP_TOP,
+            FaceContour.LOWER_LIP_BOTTOM,
+            FaceContour.NOSE_BRIDGE,
+            FaceContour.NOSE_BOTTOM,
+            FaceContour.LEFT_CHEEK,
+            FaceContour.RIGHT_CHEEK,
+        )
+        allContourTypes.forEach { contourType ->
             face.getContour(contourType)?.let { contour ->
                 contours[contourType] = contour.points.map { point ->
                     PointF(point.x, point.y)

@@ -48,6 +48,7 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+        isCoreLibraryDesugaringEnabled = true
     }
 
     kotlinOptions {
@@ -55,7 +56,6 @@ android {
         freeCompilerArgs += listOf(
             "-opt-in=androidx.compose.material3.ExperimentalMaterial3Api",
             "-opt-in=androidx.compose.animation.ExperimentalAnimationApi",
-            "-opt-in=androidx.camera.core.ExperimentalCameraApi",
             "-opt-in=androidx.media3.common.util.UnstableApi",
             "-opt-in=kotlinx.serialization.ExperimentalSerializationApi"
         )
@@ -203,6 +203,9 @@ dependencies {
     implementation("com.google.accompanist:accompanist-permissions:0.34.0")
     implementation("com.google.accompanist:accompanist-systemuicontroller:0.34.0")
     implementation("com.google.accompanist:accompanist-adaptive:0.34.0")
+
+    // ─── Core library desugaring (for java.util.Base64 etc.) ───
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
 
     // ─── Testing ───
     testImplementation("junit:junit:4.13.2")

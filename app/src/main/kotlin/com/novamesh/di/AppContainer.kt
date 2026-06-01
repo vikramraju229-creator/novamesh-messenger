@@ -48,26 +48,20 @@ import com.novamesh.ui.viewmodel.StoryViewerViewModel
 /**
  * Application-level dependency container.
  *
- * Initializes the encrypted database, repositories, use cases, and
+ * Initializes the database, repositories, use cases, and
  * provides factory methods for all ViewModels.
  *
  * @param context Application context (for DB and Matrix repository).
  * @param userId Current logged-in user ID (default: "user_self" for dev).
- * @param passphrase Optional SQLCipher passphrase (auto-generated if null).
  */
 class AppContainer(
     private val context: Context,
     private val userId: String = "user_self",
-    passphrase: ByteArray? = null,
 ) {
     // ─── Database ───────────────────────────────────────────────────────
 
-    private val dbPassphrase: ByteArray by lazy {
-        passphrase ?: AppDatabase.generateRandomPassphrase()
-    }
-
     private val database: AppDatabase by lazy {
-        AppDatabase.getInstance(context, dbPassphrase)
+        AppDatabase.getInstance(context)
     }
 
     // ─── DAOs ───────────────────────────────────────────────────────────

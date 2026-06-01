@@ -221,7 +221,7 @@ class CertificatePinner(private val context: Context) {
         val encoded = publicKey.encoded // SPKI encoded (SubjectPublicKeyInfo)
         val digest = MessageDigest.getInstance(HASH_ALGORITHM)
         val hash = digest.digest(encoded)
-        return Base64.getEncoder().encodeToString(hash)
+        return java.util.Base64.getEncoder().encodeToString(hash)
     }
 
     /**
@@ -236,7 +236,7 @@ class CertificatePinner(private val context: Context) {
         val base64Part = pin.removePrefix(HASH_PREFIX)
         if (base64Part.isEmpty()) return false
         return try {
-            Base64.getDecoder().decode(base64Part)
+            java.util.Base64.getDecoder().decode(base64Part)
             true
         } catch (e: IllegalArgumentException) {
             false

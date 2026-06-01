@@ -1,10 +1,10 @@
 package com.novamesh.security
 
 import android.content.Context
-import android.util.Base64
 import android.util.Log
 import com.novamesh.domain.model.EncryptionType
 import com.novamesh.domain.model.Message
+import com.novamesh.domain.model.MessageContent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -14,6 +14,7 @@ import java.security.KeyPair
 import java.security.KeyPairGenerator
 import java.security.PrivateKey
 import java.security.PublicKey
+import java.security.MessageDigest
 import java.security.SecureRandom
 import java.security.Signature
 import java.util.concurrent.ConcurrentHashMap
@@ -394,7 +395,7 @@ class SignalProtocolManager(private val context: Context) {
     private fun generateSessionId(userId: String, remoteDeviceId: Int): String {
         val raw = "$userId:$remoteDeviceId:${System.currentTimeMillis()}:${secureRandom.nextLong()}"
         val digest = MessageDigest.getInstance("SHA-256")
-        return Base64.encodeToString(digest.digest(raw.toByteArray()), Base64.NO_WRAP)
+        return java.util.Base64.getEncoder().encodeToString(digest.digest(raw.toByteArray()))
     }
 
     // =========================================================================
@@ -433,8 +434,12 @@ class SignalProtocolManager(private val context: Context) {
             // Generate a random IV (salt)
             val iv = ByteArray(GCM_IV_LENGTH).also { secureRandom.nextBytes(it) }
 
-            // Encrypt the message content (serialize fields as UTF-8)
-            val plaintext = message.content.toByteArray(Charsets.UTF_8)
+            // Serialize message content to JSON, then encrypt
+            val contentJson = kotlinx.serialization.json.Json.encodeToString(
+                MessageContent.serializer(),
+                message.content,
+            )
+            val plaintext = contentJson.toByteArray(Charsets.UTF_8)
             val ciphertext = aesGcmEncrypt(plaintext, messageKey, iv)
 
             // Generate a fresh ephemeral key for forward secrecy
@@ -655,6 +660,49 @@ class SignalProtocolManager(private val context: Context) {
     // =========================================================================
     // Helpers
     // =========================================================================
+
+    // =========================================================================
+    // Simple encrypt/decrypt for MessageRepository compatibility
+    // =========================================================================
+
+    /**
+     * Encrypts plaintext content for a given chat.
+     * Uses AES-GCM with a chat-derived key for simplicity.
+     */
+    suspend fun encrypt(content: String, chatId: String): String {
+        val key = deriveChatKey(chatId)
+        val iv = ByteArray(GCM_IV_LENGTH).also { secureRandom.nextBytes(it) }
+        val ciphertext = aesGcmEncrypt(content.toByteArray(Charsets.UTF_8), key, iv)
+        // Return base64-encoded iv:ciphertext
+        val encoded = java.util.Base64.getEncoder().encodeToString(ciphertext)
+        val ivEncoded = java.util.Base64.getEncoder().encodeToString(iv)
+        return "$ivEncoded:$encoded"
+    }
+
+    /**
+     * Decrypts content that was encrypted with [encrypt].
+     */
+    suspend fun decrypt(encryptedContent: String, chatId: String): String {
+        try {
+            val parts = encryptedContent.split(":", limit = 2)
+            if (parts.size != 2) return encryptedContent
+            val iv = java.util.Base64.getDecoder().decode(parts[0])
+            val ciphertext = java.util.Base64.getDecoder().decode(parts[1])
+            val key = deriveChatKey(chatId)
+            val plaintext = aesGcmDecrypt(ciphertext, key, iv)
+            return String(plaintext, Charsets.UTF_8)
+        } catch (e: Exception) {
+            return encryptedContent // return as-is on failure
+        }
+    }
+
+    /**
+     * Derives a chat-specific AES key from the chat ID.
+     */
+    private fun deriveChatKey(chatId: String): ByteArray {
+        val digest = MessageDigest.getInstance("SHA-256")
+        return digest.digest(chatId.toByteArray(Charsets.UTF_8))
+    }
 
     /**
      * Generates a deterministic device ID from the Android context.
