@@ -23,7 +23,7 @@ concurrency:
 
 env:
   GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dorg.gradle.parallel=true -Dorg.gradle.caching=true"
-  JAVA_TOOL_OPTIONS: "-Xmx1024m"
+  JAVA_TOOL_OPTIONS: "-Xmx2048m"
 
 jobs:
   lint:
