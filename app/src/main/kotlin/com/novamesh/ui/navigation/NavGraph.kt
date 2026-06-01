@@ -112,7 +112,7 @@ import kotlinx.coroutines.launch
 // DataStore for onboarding state
 private val Context.dataStore by preferencesDataStore(name = "onboarding_prefs")
 private val ONBOARDING_COMPLETE_KEY = booleanPreferencesKey("onboarding_complete")
-private val PERMISSIONS_SHOWN_KEY = booleanPermissionsKey("permissions_shown")
+private val PERMISSIONS_SHOWN_KEY = booleanPreferencesKey("permissions_shown")
 
 /** Route constants. */
 object Routes {
