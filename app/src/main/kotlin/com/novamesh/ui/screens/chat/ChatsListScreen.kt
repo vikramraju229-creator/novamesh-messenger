@@ -1,23 +1,19 @@
 /**
- * ChatListScreen — the main chats list tab showing all active conversations.
+ * ChatsListScreen — the main chats list tab showing all active conversations.
  *
  * Features:
  * - Material 3 lazy column with chat list items
- * - Each item shows: circular avatar, name, last message preview, relative
- *   timestamp, unread count badge, delivery status icon, online indicator,
- *   pin/mute icons
+ * - Search bar with camera icon button in top-right (checks CAMERA permission)
+ * - Each item shows: circular avatar, name, last message preview, timestamp,
+ *   unread count badge, delivery status icon, online indicator
  * - Swipe-to-archive gesture via [SwipeToDismissBox]
- * - Search bar at top filters chats by name or message content
- * - Floating camera FAB (small, bottom-right)
- * - Empty state with contextual messaging when no chats or no results
- * - Pull-to-refresh with [PullToRefreshBox]
- * - Animated item appearance (fade + slide)
+ * - Empty state with contextual messaging
  */
-
 @file:OptIn(ExperimentalMaterial3Api::class)
 
-package com.novamesh.ui.screens
+package com.novamesh.ui.screens.chat
 
+import android.Manifest
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -41,11 +37,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CameraAlt
-import androidx.compose.material.icons.filled.Circle
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.DoneAll
 import androidx.compose.material.icons.filled.MailOutline
-import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material.icons.filled.Search
@@ -59,19 +53,15 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SearchBar
 import androidx.compose.material3.SearchBarDefaults
-import androidx.compose.material3.SmallFloatingActionButton
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.SwipeToDismissBox
 import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
-// PullToRefresh removed — replace with a Box wrapper
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -80,12 +70,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.isGranted
+import com.google.accompanist.permissions.rememberPermissionState
 import com.novamesh.domain.model.Chat
 import com.novamesh.domain.model.MessageStatus
 import com.novamesh.domain.model.Presence
@@ -94,16 +87,13 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-// ═════════════════════════════════════════════════════════════════════════════
-// Public composable — entry point for the NavGraph
-// ═════════════════════════════════════════════════════════════════════════════
-
 /**
  * Main chat list screen showing all conversations.
  *
  * @param onChatClick Invoked when user taps a chat item; receives chatId and chatName.
- * @param onCameraClick Invoked when the camera FAB is tapped.
+ * @param onCameraClick Invoked when the camera icon button is tapped.
  */
+@OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun ChatListScreen(
     onChatClick: (chatId: String, chatName: String) -> Unit,
@@ -111,13 +101,14 @@ fun ChatListScreen(
 ) {
     // ─── State ───────────────────────────────────────────────────────────────
     var searchQuery by remember { mutableStateOf("") }
-    var isRefreshing by remember { mutableStateOf(false) }
     val chats = remember { mockChats() }
+
+    val context = LocalContext.current
+    val cameraPermissionState = rememberPermissionState(Manifest.permission.CAMERA)
 
     // Filter chats based on search query
     val filteredChats by derivedStateOf {
         if (searchQuery.isBlank()) {
-            // Show pinned chats first, then sort by timestamp descending
             chats.sortedByDescending { it.isPinned }
                 .sortedByDescending { it.lastMessageTimestamp }
         } else {
@@ -135,19 +126,15 @@ fun ChatListScreen(
                 query = searchQuery,
                 onQueryChange = { searchQuery = it },
                 onClear = { searchQuery = "" },
+                onCameraClick = {
+                    // Check camera permission before navigating
+                    if (cameraPermissionState.status.isGranted) {
+                        onCameraClick()
+                    } else {
+                        cameraPermissionState.launchPermissionRequest()
+                    }
+                },
             )
-        },
-        floatingActionButton = {
-            SmallFloatingActionButton(
-                onClick = onCameraClick,
-                containerColor = MaterialTheme.colorScheme.primaryContainer,
-                contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.CameraAlt,
-                    contentDescription = "Open camera",
-                )
-            }
         },
         modifier = Modifier.fillMaxSize(),
     ) { paddingValues ->
@@ -175,7 +162,6 @@ fun ChatListScreen(
                         val dismissState = rememberSwipeToDismissBoxState(
                             confirmValueChange = { value ->
                                 if (value == SwipeToDismissBoxValue.EndToStart) {
-                                    // In production: viewModel.archiveChat(chat.id)
                                     true
                                 } else {
                                     false
@@ -204,17 +190,18 @@ fun ChatListScreen(
 }
 
 // ═════════════════════════════════════════════════════════════════════════════
-// Search bar
+// Search bar with camera icon
 // ═════════════════════════════════════════════════════════════════════════════
 
 /**
- * Top search bar for filtering chats.
+ * Top search bar with camera icon button on the right.
  */
 @Composable
 private fun ChatListSearchBar(
     query: String,
     onQueryChange: (String) -> Unit,
     onClear: () -> Unit,
+    onCameraClick: () -> Unit,
 ) {
     SearchBar(
         query = query,
@@ -230,11 +217,19 @@ private fun ChatListSearchBar(
             )
         },
         trailingIcon = {
-            if (query.isNotEmpty()) {
-                IconButton(onClick = onClear) {
+            Row {
+                if (query.isNotEmpty()) {
+                    IconButton(onClick = onClear) {
+                        Icon(
+                            imageVector = Icons.Default.Clear,
+                            contentDescription = "Clear search",
+                        )
+                    }
+                }
+                IconButton(onClick = onCameraClick) {
                     Icon(
-                        imageVector = Icons.Default.Clear,
-                        contentDescription = "Clear search",
+                        imageVector = Icons.Default.CameraAlt,
+                        contentDescription = "Open camera",
                     )
                 }
             }
@@ -242,19 +237,13 @@ private fun ChatListSearchBar(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 8.dp, vertical = 4.dp),
-    ) {
-        // Dropdown suggestions could go here
-    }
+    ) { }
 }
 
 // ═════════════════════════════════════════════════════════════════════════════
 // Chat list item
 // ═════════════════════════════════════════════════════════════════════════════
 
-/**
- * A single row in the chat list displaying avatar, name, last message,
- * timestamp, unread badge, status icon, and auxiliary indicators.
- */
 @Composable
 private fun ChatListItem(
     chat: Chat,
@@ -276,7 +265,7 @@ private fun ChatListItem(
                 .padding(horizontal = 16.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            // ── Avatar with online dot ──────────────────────────────────────
+            // ── Avatar with online dot ──
             ChatAvatar(
                 name = chat.name,
                 avatarUri = chat.avatarUri,
@@ -286,11 +275,10 @@ private fun ChatListItem(
 
             Spacer(modifier = Modifier.width(12.dp))
 
-            // ── Text content ────────────────────────────────────────────────
+            // ── Text content ──
             Column(
                 modifier = Modifier.weight(1f),
             ) {
-                // Row 1: Name + Timestamp + Aux icons
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -307,7 +295,6 @@ private fun ChatListItem(
 
                     Spacer(modifier = Modifier.width(4.dp))
 
-                    // Pinned icon
                     if (chat.isPinned) {
                         Icon(
                             imageVector = Icons.Default.PushPin,
@@ -318,7 +305,6 @@ private fun ChatListItem(
                         Spacer(modifier = Modifier.width(2.dp))
                     }
 
-                    // Muted icon
                     if (chat.isMuted) {
                         Icon(
                             imageVector = Icons.Default.VolumeOff,
@@ -329,7 +315,6 @@ private fun ChatListItem(
                         Spacer(modifier = Modifier.width(2.dp))
                     }
 
-                    // Timestamp
                     Text(
                         text = formatRelativeTime(chat.lastMessageTimestamp),
                         style = MaterialTheme.typography.labelSmall,
@@ -342,12 +327,10 @@ private fun ChatListItem(
 
                 Spacer(modifier = Modifier.height(4.dp))
 
-                // Row 2: Last message preview + Unread badge + Status
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    // Last message preview
                     Text(
                         text = chat.lastMessage ?: "No messages yet",
                         style = MaterialTheme.typography.bodyMedium,
@@ -363,7 +346,6 @@ private fun ChatListItem(
 
                     Spacer(modifier = Modifier.width(6.dp))
 
-                    // Delivery status icon (only for outgoing messages)
                     if (chat.lastMessage != null) {
                         MessageStatusIcon(
                             status = chat.lastMessageStatus,
@@ -372,7 +354,6 @@ private fun ChatListItem(
                         Spacer(modifier = Modifier.width(4.dp))
                     }
 
-                    // Unread badge
                     if (hasUnread) {
                         UnreadBadge(count = chat.unreadCount)
                     }
@@ -386,11 +367,6 @@ private fun ChatListItem(
 // Avatar composable
 // ═════════════════════════════════════════════════════════════════════════════
 
-/**
- * Circular chat avatar with an optional online-status dot at the bottom-right.
- *
- * Falls back to the user's initial if no image URI is available.
- */
 @Composable
 private fun ChatAvatar(
     name: String,
@@ -399,7 +375,6 @@ private fun ChatAvatar(
     modifier: Modifier = Modifier,
 ) {
     Box(modifier = modifier) {
-        // Avatar circle
         Box(
             modifier = Modifier
                 .size(52.dp)
@@ -407,62 +382,38 @@ private fun ChatAvatar(
                 .background(MaterialTheme.colorScheme.primaryContainer),
             contentAlignment = Alignment.Center,
         ) {
-            if (avatarUri != null) {
-                // In production, use an async image loader like Coil:
-                // AsyncImage(model = avatarUri, contentDescription = name, ...)
-                // For now, show the first letter of the name.
-                AvatarFallback(name = name)
-            } else {
-                AvatarFallback(name = name)
-            }
+            Text(
+                text = name.firstOrNull()?.uppercase() ?: "?",
+                style = MaterialTheme.typography.titleLarge,
+                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                fontWeight = FontWeight.Bold,
+            )
         }
 
-        // Online indicator dot
         if (isOnline) {
             Box(
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
                     .size(14.dp)
                     .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.surface), // white border ring
+                    .background(MaterialTheme.colorScheme.surface),
                 contentAlignment = Alignment.Center,
             ) {
                 Box(
                     modifier = Modifier
                         .size(10.dp)
                         .clip(CircleShape)
-                        .background(Color(0xFF4CAF50)), // green dot
+                        .background(Color(0xFF4CAF50)),
                 )
             }
         }
     }
 }
 
-/**
- * Fallback avatar showing the first letter of the user's name on a colored
- * background.
- */
-@Composable
-private fun AvatarFallback(name: String) {
-    Text(
-        text = name.firstOrNull()?.uppercase() ?: "?",
-        style = MaterialTheme.typography.titleLarge,
-        color = MaterialTheme.colorScheme.onPrimaryContainer,
-        fontWeight = FontWeight.Bold,
-    )
-}
-
 // ═════════════════════════════════════════════════════════════════════════════
 // Status icon
 // ═════════════════════════════════════════════════════════════════════════════
 
-/**
- * Renders a small icon representing the delivery status of a message.
- *
- * - [MessageStatus.SENT]: single check
- * - [MessageStatus.DELIVERED]: double check
- * - [MessageStatus.READ]: blue double check
- */
 @Composable
 private fun MessageStatusIcon(
     status: MessageStatus,
@@ -482,7 +433,7 @@ private fun MessageStatusIcon(
         }
         MessageStatus.READ -> {
             icon = Icons.Filled.DoneAll
-            tint = Color(0xFF53BDEB) // WhatsApp-style blue ticks
+            tint = Color(0xFF53BDEB)
         }
         MessageStatus.SENDING,
         MessageStatus.FAILED,
@@ -504,9 +455,6 @@ private fun MessageStatusIcon(
 // Unread badge
 // ═════════════════════════════════════════════════════════════════════════════
 
-/**
- * Red circular badge displaying the unread message count.
- */
 @Composable
 private fun UnreadBadge(count: Int) {
     val displayText = if (count > 99) "99+" else count.toString()
@@ -532,10 +480,6 @@ private fun UnreadBadge(count: Int) {
 // Swipe-to-archive background
 // ═════════════════════════════════════════════════════════════════════════════
 
-/**
- * Background revealed when the user swipes a chat item to the left, showing
- * an archive action.
- */
 @Composable
 private fun SwipeArchiveBackground() {
     Box(
@@ -567,11 +511,6 @@ private fun SwipeArchiveBackground() {
 // Empty state
 // ═════════════════════════════════════════════════════════════════════════════
 
-/**
- * Shown when there are no chats to display.
- *
- * Adapts its message based on whether the user is actively searching.
- */
 @Composable
 private fun ChatListEmptyState(
     isSearching: Boolean,
@@ -617,10 +556,6 @@ private fun ChatListEmptyState(
 // Animated item wrapper
 // ═════════════════════════════════════════════════════════════════════════════
 
-/**
- * Wraps content with a fade-in + slide-up animation that plays once when the
- * composable first enters composition.
- */
 @Composable
 private fun AnimatedChatItem(
     content: @Composable () -> Unit,
@@ -648,11 +583,6 @@ private fun AnimatedChatItem(
 // Relative time formatting
 // ═════════════════════════════════════════════════════════════════════════════
 
-/**
- * Converts an epoch-millis timestamp into a human-readable relative string.
- *
- * Examples: "Just now", "2m ago", "1h ago", "Yesterday", "Wed", "Jan 5".
- */
 private fun formatRelativeTime(timestampMillis: Long): String {
     if (timestampMillis <= 0L) return ""
 
@@ -681,15 +611,9 @@ private fun formatRelativeTime(timestampMillis: Long): String {
 }
 
 // ═════════════════════════════════════════════════════════════════════════════
-// Mock data — replaces repository layer during prototyping
+// Mock data
 // ═════════════════════════════════════════════════════════════════════════════
 
-/**
- * Returns a hardcoded list of sample chats for development and preview purposes.
- *
- * In production this would be replaced by a ViewModel that observes a Room
- * database or Signal-protocol backing store.
- */
 private fun mockChats(): List<Chat> {
     val now = System.currentTimeMillis()
     val minute = 60_000L
@@ -747,7 +671,7 @@ private fun mockChats(): List<Chat> {
             id = "chat_1",
             name = alice.displayName,
             avatarUri = alice.avatarUri,
-            lastMessage = "See you tomorrow! 😊",
+            lastMessage = "See you tomorrow! \uD83D\uDE0A",
             lastMessageTimestamp = now - 2 * minute,
             lastMessageStatus = MessageStatus.READ,
             unreadCount = 0,
@@ -777,7 +701,7 @@ private fun mockChats(): List<Chat> {
             id = "chat_4",
             name = diana.displayName,
             avatarUri = diana.avatarUri,
-            lastMessage = "🔥",
+            lastMessage = "\uD83D\uDD25",
             lastMessageTimestamp = now - 8 * hour,
             lastMessageStatus = MessageStatus.READ,
             unreadCount = 0,
@@ -806,7 +730,7 @@ private fun mockChats(): List<Chat> {
         Chat(
             id = "chat_7",
             name = "Family Group",
-            lastMessage = "Mom: Don't forget dinner at 7 🍕",
+            lastMessage = "Mom: Don't forget dinner at 7 \uD83C\uDF55",
             lastMessageTimestamp = now - 5 * day,
             lastMessageStatus = MessageStatus.READ,
             unreadCount = 5,

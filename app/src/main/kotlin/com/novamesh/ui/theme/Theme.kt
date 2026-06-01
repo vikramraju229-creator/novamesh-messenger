@@ -17,12 +17,13 @@ import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
 /**
- * NovaMesh Messenger — Material You dynamic theme.
+ * NovaMesh Messenger — Silver Futuristic Material You theme.
  *
+ * - Silver/metallic surfaces with glassmorphism effects
  * - Android 12+: Uses wallpaper-based dynamic colors (monet)
- * - Android <12: Falls back to custom NovaMesh palette
- * - Supports light/dark/auto modes
- * - Configurable accent color override
+ * - Android <12: Falls back to custom NovaMesh silver palette
+ * - Bottom navigation bar uses translucent silver/navy
+ * - Status bar adapts to light/dark mode
  */
 
 private val LightColorScheme = lightColorScheme(
@@ -44,7 +45,7 @@ private val LightColorScheme = lightColorScheme(
     onErrorContainer = OnErrorContainerLight,
     background = BackgroundLight,
     onBackground = OnBackgroundLight,
-    surface = SurfaceLight,
+    surface = SilverSurfaceLight,
     onSurface = OnSurfaceLight,
     surfaceVariant = SurfaceVariantLight,
     onSurfaceVariant = OnSurfaceVariantLight,
@@ -70,7 +71,7 @@ private val DarkColorScheme = darkColorScheme(
     onErrorContainer = OnErrorContainerDark,
     background = BackgroundDark,
     onBackground = OnBackgroundDark,
-    surface = SurfaceDark,
+    surface = SilverSurfaceDark,
     onSurface = OnSurfaceDark,
     surfaceVariant = SurfaceVariantDark,
     onSurfaceVariant = OnSurfaceVariantDark,
@@ -80,7 +81,7 @@ private val DarkColorScheme = darkColorScheme(
 @Composable
 fun NovaMeshTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    dynamicColor: Boolean = true, // Use Material You on Android 12+
+    dynamicColor: Boolean = true,
     content: @Composable () -> Unit,
 ) {
     val colorScheme = when {
@@ -98,8 +99,17 @@ fun NovaMeshTheme(
     if (!view.isInEditMode) {
         SideEffect {
             val window = (view.context as Activity).window
-            window.statusBarColor = colorScheme.surface.toArgb()
-            window.navigationBarColor = colorScheme.surface.toArgb()
+            // Translucent navigation bar for silver glass effect
+            window.navigationBarColor = if (darkTheme) {
+                NavBarDark.toArgb()
+            } else {
+                NavBarLight.toArgb()
+            }
+            window.statusBarColor = if (darkTheme) {
+                BackgroundDark.toArgb()
+            } else {
+                BackgroundLight.toArgb()
+            }
             WindowCompat.getInsetsController(window, view).apply {
                 isAppearanceLightStatusBars = !darkTheme
                 isAppearanceLightNavigationBars = !darkTheme
@@ -126,6 +136,7 @@ object NovaMeshColors {
     val error get() = NovaError
     val glass get() = NovaGlass
     val glassDark get() = NovaGlassDark
+    val glassBorder get() = NovaGlassBorder
     val streakColors get() = StreakFireGradient
     val storyRingColors get() = StoryRingColors
 }

@@ -45,6 +45,7 @@ credentials.properties
 
 # ─── Firebase ───
 firebase-secrets.json
+firebase/*.json
 
 # ─── Android specific ───
 /captures

@@ -1,21 +1,21 @@
 {
   "project_info": {
-    "project_number": "000000000000",
-    "project_id": "novamesh-messenger-dev",
-    "storage_bucket": "novamesh-messenger-dev.appspot.com"
+    "project_number": "1055477481458",
+    "project_id": "novamesh-messenger",
+    "storage_bucket": "novamesh-messenger.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:000000000000:android:0000000000000000",
+        "mobilesdk_app_id": "1:1055477481458:android:c3f4740d2164859c0cf56b",
         "android_client_info": {
-          "package_name": "com.novamesh.messenger.debug"
+          "package_name": "com.novamesh.messenger29"
         }
       },
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyDummyKeyForDevelopmentBuilds"
+          "current_key": "AIzaSyBxsqyPWRjcI_1KBuRDAiBWkcCmWjRubUU"
         }
       ],
       "services": {
