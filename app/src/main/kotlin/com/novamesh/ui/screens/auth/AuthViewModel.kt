@@ -213,11 +213,17 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
                     photoUrl = ref.downloadUrl.await().toString()
                 }
 
+                // Determine auth method
+                val hasPhone = !user.phoneNumber.isNullOrBlank()
+                val authMethod = if (hasPhone) "phone" else "email"
+
                 // Create user document in Firestore
                 val userData = hashMapOf(
                     "name" to name,
                     "username" to username,
                     "phone" to (user.phoneNumber ?: ""),
+                    "email" to (user.email ?: ""),
+                    "authMethod" to authMethod,
                     "photoUrl" to (photoUrl ?: user.photoUrl?.toString() ?: ""),
                     "bio" to "",
                     "lastSeen" to System.currentTimeMillis(),

@@ -3,6 +3,7 @@
 package com.novamesh.ui.screens.profile
 
 import android.Manifest
+import android.app.Application
 import android.content.pm.PackageManager
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -31,7 +32,9 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Flag
+import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Button
@@ -58,6 +61,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -83,7 +87,7 @@ fun ProfileScreen(
     onSettings: () -> Unit = {},
     onLogout: () -> Unit = {},
 ) {
-    val viewModel = remember { ProfileViewModel() }
+    val viewModel = remember { ProfileViewModel(context.applicationContext as Application) }
     val state by viewModel.state.collectAsState()
 
     val context = LocalContext.current
@@ -317,7 +321,7 @@ fun ProfileScreen(
 
                             Spacer(modifier = Modifier.height(8.dp))
 
-                            // Phone number (read-only)
+                            // Phone number (read-only — phone auth users)
                             if (data.phone.isNotBlank()) {
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
@@ -334,6 +338,52 @@ fun ProfileScreen(
                                         text = data.phone,
                                         style = MaterialTheme.typography.bodyMedium,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
+                                Spacer(modifier = Modifier.height(8.dp))
+                            }
+
+                            // Email (read-only — email auth users)
+                            if (data.email.isNotBlank()) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.Center,
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Email,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(16.dp),
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text(
+                                        text = data.email,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
+                                Spacer(modifier = Modifier.height(8.dp))
+                            }
+
+                            // Auth method badge
+                            if (data.authMethod.isNotBlank()) {
+                                val (badgeText, badgeColor) = when (data.authMethod) {
+                                    "phone" -> "📞 Phone" to Color(0xFF43A047)
+                                    "email" -> "✉️ Email" to Color(0xFF1565C0)
+                                    else -> data.authMethod to Color.Gray
+                                }
+                                Card(
+                                    shape = RoundedCornerShape(8.dp),
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = badgeColor.copy(alpha = 0.1f),
+                                    ),
+                                ) {
+                                    Text(
+                                        text = "Signed in with $badgeText",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = badgeColor,
+                                        fontWeight = FontWeight.Medium,
+                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
                                     )
                                 }
                                 Spacer(modifier = Modifier.height(8.dp))
