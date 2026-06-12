@@ -14,6 +14,7 @@ import com.google.firebase.auth.PhoneAuthOptions
 import com.google.firebase.auth.PhoneAuthProvider
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
+
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -30,6 +31,13 @@ sealed interface AuthState {
     data object NeedsProfile : AuthState
     data class Error(val message: String) : AuthState
     data object Success : AuthState
+}
+
+/** Email auth result wrapper. */
+sealed interface EmailAuthResult {
+    data object Success : EmailAuthResult
+    data object NeedsProfile : EmailAuthResult
+    data class Error(val message: String) : EmailAuthResult
 }
 
 /**
@@ -226,6 +234,82 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
             } catch (e: Exception) {
                 _state.value = AuthState.Error(e.message ?: "Failed to create profile")
                 onComplete(false)
+            }
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // Email / Password Auth
+    // ═══════════════════════════════════════════════════════════════════════
+
+    /**
+     * Sign in with email and password.
+     *
+     * On success, checks if a Firestore profile exists. Falls back to
+     * profile creation if not found.
+     */
+    fun signInWithEmail(email: String, password: String) {
+        _state.value = AuthState.Loading
+        viewModelScope.launch {
+            try {
+                val result = auth.signInWithEmailAndPassword(email, password).await()
+                val user = result.user
+                _currentUser.value = user
+                if (user != null) {
+                    checkProfileExists(user.uid)
+                } else {
+                    _state.value = AuthState.Error("Sign in failed")
+                }
+            } catch (e: Exception) {
+                val msg = when (e) {
+                    is FirebaseAuthInvalidCredentialsException -> "Wrong email or password"
+                    else -> e.message ?: "Sign in failed"
+                }
+                _state.value = AuthState.Error(msg)
+            }
+        }
+    }
+
+    /**
+     * Create a new account with email and password.
+     *
+     * After creating the Firebase Auth user, transitions to
+     * `NeedsProfile` so the user can set their display name / photo.
+     */
+    fun signUpWithEmail(email: String, password: String) {
+        _state.value = AuthState.Loading
+        viewModelScope.launch {
+            try {
+                val result = auth.createUserWithEmailAndPassword(email, password).await()
+                val user = result.user
+                _currentUser.value = user
+                if (user != null) {
+                    // New user always needs profile
+                    _state.value = AuthState.NeedsProfile
+                } else {
+                    _state.value = AuthState.Error("Account creation failed")
+                }
+            } catch (e: Exception) {
+                val msg = when (e) {
+                    is FirebaseAuthInvalidCredentialsException -> "Invalid email format"
+                    else -> e.message ?: "Account creation failed"
+                }
+                _state.value = AuthState.Error(msg)
+            }
+        }
+    }
+
+    /**
+     * Send a password-reset email.
+     */
+    fun resetPassword(email: String) {
+        _state.value = AuthState.Loading
+        viewModelScope.launch {
+            try {
+                auth.sendPasswordResetEmail(email).await()
+                _state.value = AuthState.Idle
+            } catch (e: Exception) {
+                _state.value = AuthState.Error(e.message ?: "Failed to send reset email")
             }
         }
     }
