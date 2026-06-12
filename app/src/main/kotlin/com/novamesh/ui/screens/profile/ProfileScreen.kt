@@ -34,7 +34,6 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Flag
-import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Button
@@ -87,10 +86,9 @@ fun ProfileScreen(
     onSettings: () -> Unit = {},
     onLogout: () -> Unit = {},
 ) {
+    val context = LocalContext.current
     val viewModel = remember { ProfileViewModel(context.applicationContext as Application) }
     val state by viewModel.state.collectAsState()
-
-    val context = LocalContext.current
     var isEditing by remember { mutableStateOf(false) }
     var editName by remember { mutableStateOf("") }
     var editUsername by remember { mutableStateOf("") }
