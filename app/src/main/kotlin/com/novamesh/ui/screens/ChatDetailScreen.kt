@@ -112,6 +112,7 @@ import com.novamesh.domain.model.MessageStatus
 import com.novamesh.domain.model.MessageType
 import com.novamesh.domain.model.Presence
 import com.novamesh.domain.model.User
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -160,7 +161,7 @@ fun ChatDetailScreen(
                     id = fm.id,
                     chatId = fm.chatId,
                     senderId = fm.senderId,
-                    senderName = fm.senderName,
+                    senderName = fm.senderId,
                     content = MessageContent.Text(fm.text),
                     type = MessageType.TEXT,
                     timestamp = fm.timestamp,
