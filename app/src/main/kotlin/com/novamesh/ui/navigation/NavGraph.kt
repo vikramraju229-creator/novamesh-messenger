@@ -97,6 +97,7 @@ import com.novamesh.ui.screens.camera.CameraScreen
 import com.novamesh.ui.screens.chat.ChatListScreen
 import com.novamesh.ui.screens.contacts.ContactsScreen
 import com.novamesh.ui.screens.discover.DiscoverScreen
+import com.novamesh.ui.screens.onboarding.PermissionsScreen
 import com.novamesh.ui.screens.profile.ProfileScreen
 import com.novamesh.ui.screens.search.SearchUsersScreen
 import com.novamesh.ui.theme.NavBarDark

@@ -83,8 +83,8 @@ import com.novamesh.domain.model.Chat
 import com.novamesh.domain.model.MessageStatus
 import com.novamesh.domain.model.Presence
 import com.novamesh.domain.model.User
+import com.novamesh.domain.model.MessageStatus
 import com.novamesh.data.remote.FirestoreRepository
-import com.google.firebase.firestore.FirebaseFirestore
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -106,8 +106,7 @@ fun ChatListScreen(
     val context = LocalContext.current
 
     // ─── Real chats from Firestore ────────────────────────────────────────────
-    val firestore = remember { FirebaseFirestore.getInstance() }
-    val repository = remember { FirestoreRepository(firestore) }
+    val repository = remember { FirestoreRepository() }
     var realChats by remember { mutableStateOf<List<Chat>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
 
@@ -120,7 +119,7 @@ fun ChatListScreen(
                     avatarUri = null,
                     lastMessage = fc.lastMessage?.text,
                     lastMessageTimestamp = fc.lastMessage?.timestamp ?: 0L,
-                    lastMessageStatus = null,
+                    lastMessageStatus = MessageStatus.DELIVERED,
                     unreadCount = fc.unreadCount?.values?.sum() ?: 0,
                     isPinned = false,
                     isMuted = false,

@@ -207,7 +207,9 @@ fun DiscoverScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            item(key = "spacer") {
+                Spacer(modifier = Modifier.height(8.dp))
+            }
 
             // Channel list
             if (filteredChannels.isEmpty()) {

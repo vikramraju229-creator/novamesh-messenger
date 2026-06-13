@@ -48,7 +48,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.google.firebase.firestore.FirebaseFirestore
 import com.novamesh.data.remote.FirestoreRepository
 import com.novamesh.data.remote.FirestoreUser
 import kotlinx.coroutines.Job
@@ -67,7 +66,7 @@ fun SearchUsersScreen(
     onUserClick: (userId: String, userName: String) -> Unit = { _, _ -> },
     onBack: () -> Unit = {},
 ) {
-    val repository = remember { FirestoreRepository(FirebaseFirestore.getInstance()) }
+    val repository = remember { FirestoreRepository() }
     val scope = rememberCoroutineScope()
 
     var query by remember { mutableStateOf("") }
