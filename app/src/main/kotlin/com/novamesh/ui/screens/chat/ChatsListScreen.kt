@@ -41,6 +41,8 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.DoneAll
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -94,8 +96,10 @@ private val WhatsAppGreen = Color(0xFF25D366)
 fun ChatListScreen(
     onChatClick: (chatId: String, chatName: String) -> Unit,
     onCameraClick: () -> Unit,
+    onSettingsClick: () -> Unit = {},
 ) {
     var searchQuery by remember { mutableStateOf("") }
+    var showMoreMenu by remember { mutableStateOf(false) }
     val context = LocalContext.current
 
     // ─── Real chats from Firestore ────────────────────────────────────────
@@ -171,11 +175,33 @@ fun ChatListScreen(
                                 contentDescription = "Camera",
                             )
                         }
-                        IconButton(onClick = { /* TODO: more options menu */ }) {
-                            Icon(
-                                imageVector = Icons.Default.MoreVert,
-                                contentDescription = "More options",
-                            )
+                        Box {
+                            IconButton(onClick = { showMoreMenu = true }) {
+                                Icon(
+                                    imageVector = Icons.Default.MoreVert,
+                                    contentDescription = "More options",
+                                )
+                            }
+                            DropdownMenu(
+                                expanded = showMoreMenu,
+                                onDismissRequest = { showMoreMenu = false },
+                            ) {
+                                DropdownMenuItem(
+                                    text = { Text("New group") },
+                                    onClick = { showMoreMenu = false },
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Archived") },
+                                    onClick = { showMoreMenu = false },
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Settings") },
+                                    onClick = {
+                                        showMoreMenu = false
+                                        onSettingsClick()
+                                    },
+                                )
+                            }
                         }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(

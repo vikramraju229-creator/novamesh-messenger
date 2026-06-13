@@ -93,6 +93,7 @@ import com.novamesh.ui.screens.contacts.ContactsScreen
 import com.novamesh.ui.screens.onboarding.PermissionsScreen
 import com.novamesh.ui.screens.profile.ProfileScreen
 import com.novamesh.ui.screens.search.SearchUsersScreen
+import com.novamesh.ui.screens.settings.SettingsScreen
 import com.novamesh.ui.theme.NovaPrimary
 import com.novamesh.ui.theme.NovaSecondary
 import kotlinx.coroutines.flow.first
@@ -111,6 +112,7 @@ object Routes {
     const val UPDATES = "updates"          // "Updates" tab (was "Stories")
     const val CONTACTS = "contacts"        // "People" tab
     const val PROFILE = "profile"
+    const val SETTINGS = "settings"
     const val SEARCH_USERS = "search_users"
     const val CAMERA = "camera"
     const val SNAP_PREVIEW = "snap_preview/{mediaUri}/{isVideo}"
@@ -313,6 +315,9 @@ fun NovaMeshNavHost() {
                     onCameraClick = {
                         navController.navigate(Routes.CAMERA)
                     },
+                    onSettingsClick = {
+                        navController.navigate(Routes.SETTINGS)
+                    },
                 )
             }
 
@@ -347,7 +352,30 @@ fun NovaMeshNavHost() {
             }
 
             composable(Routes.PROFILE) {
-                ProfileScreen()
+                ProfileScreen(
+                    onSettings = {
+                        navController.navigate(Routes.SETTINGS)
+                    },
+                    onLogout = {
+                        FirebaseAuth.getInstance().signOut()
+                        navController.navigate(Routes.AUTH) {
+                            popUpTo(Routes.PROFILE) { inclusive = true }
+                        }
+                    },
+                )
+            }
+
+            // ─── Settings ───
+            composable(Routes.SETTINGS) {
+                SettingsScreen(
+                    onBack = { navController.popBackStack() },
+                    onLogout = {
+                        FirebaseAuth.getInstance().signOut()
+                        navController.navigate(Routes.AUTH) {
+                            popUpTo(Routes.SETTINGS) { inclusive = true }
+                        }
+                    },
+                )
             }
 
             // ─── Chat Detail ───

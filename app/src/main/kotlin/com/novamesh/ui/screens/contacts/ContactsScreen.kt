@@ -88,8 +88,7 @@ fun ContactsScreen(
         val q = searchQuery.trim().lowercase()
         allUsers.filter {
             it.name.lowercase().contains(q) ||
-                it.username.lowercase().contains(q) ||
-                it.email.lowercase().contains(q)
+                it.username.lowercase().contains(q)
         }
     }
 

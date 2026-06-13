@@ -131,7 +131,7 @@ fun ProfileScreen(
                             Icon(Icons.Default.Save, contentDescription = "Save")
                         }
                     } else {
-                        IconButton(onClick = { /* TODO: navigate to settings */ }) {
+                        IconButton(onClick = onSettings) {
                             Icon(Icons.Default.Settings, contentDescription = "Settings")
                         }
                     }
