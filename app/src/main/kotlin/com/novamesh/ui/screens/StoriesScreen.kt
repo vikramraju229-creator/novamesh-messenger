@@ -67,6 +67,9 @@ import com.google.firebase.auth.FirebaseAuth
 import com.novamesh.data.remote.FirestoreRepository
 import com.novamesh.data.remote.FirestoreStory
 import com.novamesh.data.remote.FirestoreUser
+import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.withTimeout
 import com.novamesh.ui.theme.NovaPrimary
 import com.novamesh.ui.theme.NovaSecondary
 import com.novamesh.ui.theme.NovaTertiary
@@ -103,13 +106,21 @@ fun StoriesScreen(
             val userMap = mutableMapOf<String, FirestoreUser>()
             val users = repository.searchUsers("")
             users.forEach { userMap[it.id] = it }
+            allUsers = userMap
 
-            // Observe stories
+            // One-shot initial fetch — ensures loading stops even if no stories exist
+            val currentStories = withTimeout(10_000L) {
+                repository.observeStories().first()
+            }
+            allStories = currentStories
+            isLoading = false
+
+            // Continue observing for real-time updates (non-blocking for UI)
             repository.observeStories().collect { stories ->
                 allStories = stories
-                allUsers = userMap
-                isLoading = false
             }
+        } catch (_: kotlinx.coroutines.TimeoutCancellationException) {
+            isLoading = false
         } catch (_: Exception) {
             isLoading = false
         }

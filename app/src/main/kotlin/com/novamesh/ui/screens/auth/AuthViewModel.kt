@@ -15,11 +15,15 @@ import com.google.firebase.auth.PhoneAuthProvider
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
 
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeout
 import java.util.concurrent.TimeUnit
 
 /** Possible authentication states. */
@@ -168,14 +172,19 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
     private fun checkProfileExists(uid: String) {
         viewModelScope.launch {
             try {
-                val doc = firestore.collection("users").document(uid).get().await()
+                val doc = withTimeout(15_000L) {
+                    firestore.collection("users").document(uid).get().await()
+                }
                 if (doc.exists() && doc.contains("name")) {
                     _state.value = AuthState.ProfileExists
                 } else {
                     _state.value = AuthState.NeedsProfile
                 }
+            } catch (e: TimeoutCancellationException) {
+                // Firestore timeout → assume new user
+                _state.value = AuthState.NeedsProfile
             } catch (e: Exception) {
-                // Firestore might be unavailable; assume new user
+                // Firestore unavailable → assume new user
                 _state.value = AuthState.NeedsProfile
             }
         }
@@ -206,18 +215,20 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
             try {
                 var photoUrl: String? = null
 
-                // Upload photo if provided
+                // Upload photo if provided (with timeout)
                 if (photoUri != null) {
-                    val ref = storage.reference.child("profiles/${user.uid}/photo.jpg")
-                    val uploadTask = ref.putFile(android.net.Uri.parse(photoUri)).await()
-                    photoUrl = ref.downloadUrl.await().toString()
+                    withTimeout(15_000L) {
+                        val ref = storage.reference.child("profiles/${user.uid}/photo.jpg")
+                        ref.putFile(android.net.Uri.parse(photoUri)).await()
+                        photoUrl = ref.downloadUrl.await().toString()
+                    }
                 }
 
                 // Determine auth method
                 val hasPhone = !user.phoneNumber.isNullOrBlank()
                 val authMethod = if (hasPhone) "phone" else "email"
 
-                // Create user document in Firestore
+                // Create user document in Firestore (with timeout)
                 val userData = hashMapOf(
                     "name" to name,
                     "username" to username,
@@ -233,10 +244,17 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
                     "snapStreak" to 0,
                 )
 
-                firestore.collection("users").document(user.uid).set(userData).await()
+                withTimeout(30_000L) {
+                    withContext(Dispatchers.IO) {
+                        firestore.collection("users").document(user.uid).set(userData).await()
+                    }
+                }
 
                 _state.value = AuthState.Success
                 onComplete(true)
+            } catch (e: TimeoutCancellationException) {
+                _state.value = AuthState.Error("Request timed out. Check your network and try again.")
+                onComplete(false)
             } catch (e: Exception) {
                 _state.value = AuthState.Error(e.message ?: "Failed to create profile")
                 onComplete(false)

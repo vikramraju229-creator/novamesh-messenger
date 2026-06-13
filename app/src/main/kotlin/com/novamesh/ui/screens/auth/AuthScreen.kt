@@ -238,14 +238,22 @@ fun AuthScreen(
             onBack = { currentStep = AuthStep.SELECT_METHOD; viewModel.resetState() },
             onErrorDismiss = { viewModel.resetState() },
         )
-        AuthStep.CREATE_PROFILE -> CreateProfileScreen(
-            isLoading = state is AuthState.Loading,
-            error = (state as? AuthState.Error)?.message,
-            onCreateProfile = { name, username, photoUri ->
-                viewModel.createProfile(name, username, photoUri)
-            },
-            onErrorDismiss = { viewModel.resetState() },
-        )
+        AuthStep.CREATE_PROFILE -> {
+            // Local loading state decoupled from AuthState machine to prevent
+            // infinite spinner if state transitions race on first render.
+            var profileLoading by remember { mutableStateOf(false) }
+            CreateProfileScreen(
+                isLoading = profileLoading,
+                error = (state as? AuthState.Error)?.message,
+                onCreateProfile = { name, username, photoUri ->
+                    profileLoading = true
+                    viewModel.createProfile(name, username, photoUri) { _ ->
+                        profileLoading = false
+                    }
+                },
+                onErrorDismiss = { viewModel.resetState() },
+            )
+        }
     }
 }
 

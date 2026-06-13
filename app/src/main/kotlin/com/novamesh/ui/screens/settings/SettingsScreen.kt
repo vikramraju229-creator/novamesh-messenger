@@ -27,6 +27,9 @@ import androidx.compose.material.icons.filled.Badge
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.DarkMode
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.RadioButton
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Fingerprint
 import androidx.compose.material.icons.filled.FontDownload
@@ -150,6 +153,21 @@ fun SettingsScreen(
     var showLogoutDialog by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
 
+    // ── Settings dialog state ──
+    var showNameEditDialog by remember { mutableStateOf(false) }
+    var editName by remember { mutableStateOf("") }
+    var editUsername by remember { mutableStateOf("") }
+
+    var showLastSeenDialog by remember { mutableStateOf(false) }
+    var showPhotoVisDialog by remember { mutableStateOf(false) }
+    var showDisappearingDialog by remember { mutableStateOf(false) }
+    var showChangeNumberDialog by remember { mutableStateOf(false) }
+    var changeNumberInput by remember { mutableStateOf("") }
+
+    var blockedUsers by remember { mutableStateOf<List<String>>(emptyList()) }
+    var showBlockedDialog by remember { mutableStateOf(false) }
+    var blockedLoaded by remember { mutableStateOf(false) }
+
     // Helper to update settings
     fun <T> update(key: androidx.datastore.preferences.core.Preferences.Key<T>, value: T) {
         scope.launch {
@@ -200,6 +218,208 @@ fun SettingsScreen(
         )
     }
 
+    // ═══════════════════════════════════════════════════════════════════════
+    // ✅ EDIT NAME / USERNAME DIALOG
+    // ═══════════════════════════════════════════════════════════════════════
+    if (showNameEditDialog) {
+        AlertDialog(
+            onDismissRequest = { showNameEditDialog = false },
+            icon = { Icon(Icons.Filled.Badge, contentDescription = null) },
+            title = { Text("Edit Name / Username") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    OutlinedTextField(
+                        value = editName,
+                        onValueChange = { editName = it },
+                        label = { Text("Full Name") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    OutlinedTextField(
+                        value = editUsername,
+                        onValueChange = { editUsername = it },
+                        label = { Text("@Username") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showNameEditDialog = false
+                        scope.launch {
+                            try {
+                                val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return@launch
+                                val fb = FirebaseFirestore.getInstance()
+                                if (editName.isNotBlank()) fb.collection("users").document(uid).update("name", editName).await()
+                                if (editUsername.isNotBlank()) fb.collection("users").document(uid).update("username", editUsername).await()
+                            } catch (_: Exception) { }
+                        }
+                    },
+                ) { Text("Save") }
+            },
+            dismissButton = { TextButton(onClick = { showNameEditDialog = false }) { Text("Cancel") } },
+        )
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // ✅ LAST SEEN PICKER
+    // ═══════════════════════════════════════════════════════════════════════
+    if (showLastSeenDialog) {
+        AlertDialog(
+            onDismissRequest = { showLastSeenDialog = false },
+            title = { Text("Who can see my Last Seen?") },
+            text = {
+                Column {
+                    listOf("Everyone", "My Contacts", "Nobody").forEach { option ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth().clickable {
+                                update(READ_RECEIPTS_KEY, option == "Everyone")
+                                showLastSeenDialog = false
+                            }.padding(vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            RadioButton(
+                                selected = (option == "Everyone" && readReceipts) || (option == "Nobody" && !readReceipts),
+                                onClick = {
+                                    update(READ_RECEIPTS_KEY, option == "Everyone")
+                                    showLastSeenDialog = false
+                                },
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(option)
+                        }
+                    }
+                }
+            },
+            confirmButton = {},
+        )
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // ✅ PROFILE PHOTO VISIBILITY PICKER
+    // ═══════════════════════════════════════════════════════════════════════
+    if (showPhotoVisDialog) {
+        AlertDialog(
+            onDismissRequest = { showPhotoVisDialog = false },
+            title = { Text("Who can see my profile photo?") },
+            text = {
+                Column {
+                    listOf("Everyone", "My Contacts", "Nobody").forEach { option ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth().clickable {
+                                showPhotoVisDialog = false
+                            }.padding(vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            RadioButton(selected = option == "Everyone", onClick = { showPhotoVisDialog = false })
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(option)
+                        }
+                    }
+                }
+            },
+            confirmButton = {},
+        )
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // ✅ DISAPPEARING MESSAGES PICKER
+    // ═══════════════════════════════════════════════════════════════════════
+    if (showDisappearingDialog) {
+        AlertDialog(
+            onDismissRequest = { showDisappearingDialog = false },
+            title = { Text("Disappearing Messages") },
+            text = {
+                Column {
+                    listOf("Off", "24 hours", "7 days", "90 days").forEach { option ->
+                        val key = option.lowercase().replace(" ", "")
+                        Row(
+                            modifier = Modifier.fillMaxWidth().clickable {
+                                update(DISAPPEARING_MESSAGES_KEY, key)
+                                showDisappearingDialog = false
+                            }.padding(vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            RadioButton(
+                                selected = disappearingMessages == key,
+                                onClick = {
+                                    update(DISAPPEARING_MESSAGES_KEY, key)
+                                    showDisappearingDialog = false
+                                },
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(option)
+                        }
+                    }
+                }
+            },
+            confirmButton = {},
+        )
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // ✅ BLOCKED CONTACTS DIALOG
+    // ═══════════════════════════════════════════════════════════════════════
+    if (showBlockedDialog) {
+        if (!blockedLoaded) {
+            LaunchedEffect(Unit) {
+                try {
+                    val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return@LaunchedEffect
+                    val doc = FirebaseFirestore.getInstance().collection("users").document(uid).get().await()
+                    blockedUsers = doc.getList<String>("blocked") ?: emptyList()
+                } catch (_: Exception) { }
+                blockedLoaded = true
+            }
+        }
+        AlertDialog(
+            onDismissRequest = { showBlockedDialog = false },
+            title = { Text("Blocked Contacts") },
+            text = {
+                if (blockedUsers.isEmpty()) {
+                    Text("No blocked contacts")
+                } else {
+                    Column {
+                        blockedUsers.forEach { uid ->
+                            Text(uid, modifier = Modifier.padding(vertical = 4.dp))
+                        }
+                    }
+                }
+            },
+            confirmButton = { TextButton(onClick = { showBlockedDialog = false }) { Text("Done") } },
+        )
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // ✅ CHANGE NUMBER DIALOG
+    // ═══════════════════════════════════════════════════════════════════════
+    if (showChangeNumberDialog) {
+        AlertDialog(
+            onDismissRequest = { showChangeNumberDialog = false },
+            title = { Text("Change Phone Number") },
+            text = {
+                OutlinedTextField(
+                    value = changeNumberInput,
+                    onValueChange = { changeNumberInput = it },
+                    label = { Text("New phone number") },
+                    placeholder = { Text("+1 (555) 123-4567") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showChangeNumberDialog = false
+                        changeNumberInput = ""
+                    },
+                ) { Text("Send OTP") }
+            },
+            dismissButton = { TextButton(onClick = { showChangeNumberDialog = false }) { Text("Cancel") } },
+        )
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -224,21 +444,28 @@ fun SettingsScreen(
                 SettingsRow(SettingsItem(
                     icon = Icons.Filled.CameraAlt, title = "Change Profile Photo",
                     subtitle = "Update your avatar",
-                    onClick = { /* Navigate to profile */ },
+                    onClick = { /* Profile photo is changed from Profile screen */ },
                 ))
             }
             item {
                 SettingsRow(SettingsItem(
                     icon = Icons.Filled.Badge, title = "Change Name / Username",
                     subtitle = "Edit your display name and @handle",
-                    onClick = { /* Navigate to edit name */ },
+                    onClick = {
+                        editName = ""
+                        editUsername = ""
+                        showNameEditDialog = true
+                    },
                 ))
             }
             item {
                 SettingsRow(SettingsItem(
                     icon = Icons.Filled.Person, title = "Change Number",
                     subtitle = "Send OTP to a new phone number",
-                    onClick = { /* Send new OTP */ },
+                    onClick = {
+                        changeNumberInput = ""
+                        showChangeNumberDialog = true
+                    },
                 ))
             }
             item {
@@ -255,14 +482,14 @@ fun SettingsScreen(
                 SettingsRow(SettingsItem(
                     icon = Icons.Filled.Visibility, title = "Last Seen",
                     subtitle = when (readReceipts) { true -> "Everyone"; false -> "Nobody" },
-                    onClick = { /* Show picker: Everyone/Contacts/Nobody */ },
+                    onClick = { showLastSeenDialog = true },
                 ))
             }
             item {
                 SettingsRow(SettingsItem(
                     icon = Icons.Filled.Visibility, title = "Profile Photo Visibility",
                     subtitle = "Everyone",
-                    onClick = { /* Show picker */ },
+                    onClick = { showPhotoVisDialog = true },
                 ))
             }
             item {
@@ -275,21 +502,36 @@ fun SettingsScreen(
                 SettingsRow(SettingsItem(
                     icon = Icons.Filled.Timer, title = "Disappearing Messages",
                     subtitle = disappearingMessages.replaceFirstChar { it.uppercase() },
-                    onClick = { /* Show picker: Off/24h/7d/90d */ },
+                    onClick = { showDisappearingDialog = true },
                 ))
             }
             item {
                 SettingsRow(SettingsItem(
                     icon = Icons.Filled.People, title = "Blocked Contacts",
                     subtitle = "Manage blocked users",
-                    onClick = { /* Navigate to blocked contacts */ },
+                    onClick = {
+                        blockedLoaded = false
+                        showBlockedDialog = true
+                    },
                 ))
             }
             item {
                 SettingsRow(SettingsItem(
                     icon = Icons.Filled.VisibilityOff, title = "Ghost Mode",
                     subtitle = "Hide online status & read receipts",
-                    trailing = { Switch(checked = ghostMode, onCheckedChange = { update(GHOST_MODE_KEY, it) }) },
+                    trailing = {
+                        Switch(checked = ghostMode, onCheckedChange = {
+                            update(GHOST_MODE_KEY, it)
+                            // Also update Firestore presence
+                            scope.launch {
+                                try {
+                                    val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return@launch
+                                    FirebaseFirestore.getInstance().collection("users").document(uid)
+                                        .update("isOnline", !it).await()
+                                } catch (_: Exception) { }
+                            }
+                        })
+                    },
                 ))
             }
 

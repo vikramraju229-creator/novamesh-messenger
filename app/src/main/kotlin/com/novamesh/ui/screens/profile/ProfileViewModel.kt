@@ -8,11 +8,15 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
 import com.novamesh.data.local.ProfileCache
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeout
 
 /** Profile data from Firestore. */
 data class ProfileData(
@@ -151,17 +155,23 @@ class ProfileViewModel(application: Application) : AndroidViewModel(application)
 
         viewModelScope.launch {
             try {
-                val ref = storage.reference.child("profiles/$uid/photo.jpg")
-                ref.putFile(uri).await()
-                val downloadUrl = ref.downloadUrl.await().toString()
+                withTimeout(30_000L) {
+                    withContext(Dispatchers.IO) {
+                        val ref = storage.reference.child("profiles/$uid/photo.jpg")
+                        ref.putFile(uri).await()
+                        val downloadUrl = ref.downloadUrl.await().toString()
 
-                // Update Firestore
-                firestore.collection("users").document(uid)
-                    .update("photoUrl", downloadUrl).await()
+                        // Update Firestore
+                        firestore.collection("users").document(uid)
+                            .update("photoUrl", downloadUrl).await()
+                    }
+                }
 
                 // Reload profile (refreshes cache too)
                 loadProfile()
                 _state.value = ProfileState.Saved
+            } catch (e: TimeoutCancellationException) {
+                _state.value = ProfileState.Error("Upload timed out. Check your network.")
             } catch (e: Exception) {
                 _state.value = ProfileState.Error(e.message ?: "Failed to upload photo")
             }
