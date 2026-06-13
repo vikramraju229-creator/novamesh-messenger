@@ -23,7 +23,7 @@ concurrency:
 
 env:
   GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dorg.gradle.parallel=true -Dorg.gradle.caching=true"
-  JAVA_TOOL_OPTIONS: "-Xmx2048m"
+  JAVA_TOOL_OPTIONS: "-Xmx4096m"
 
 jobs:
   lint:
@@ -128,7 +128,7 @@ jobs:
             ${{ runner.os }}-gradle-
 
       - name: Build debug APK
-        run: ./gradlew assembleDebug --no-daemon
+        run: ./gradlew assembleDebug --no-daemon -Dorg.gradle.jvmargs=-Xmx4608m
 
       - name: Sign debug APK (debug keystore is auto-generated)
         run: echo "Debug APK built with auto-generated debug keystore"
