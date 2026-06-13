@@ -104,7 +104,9 @@ fun StoriesScreen(
         try {
             // Get current user's name for "My Story"
             val userMap = mutableMapOf<String, FirestoreUser>()
-            val users = repository.searchUsers("")
+            val users = withTimeout(10_000L) {
+                repository.searchUsers("")
+            }
             users.forEach { userMap[it.id] = it }
             allUsers = userMap
 
