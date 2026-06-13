@@ -50,6 +50,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.google.firebase.firestore.FirebaseFirestore
 import com.novamesh.data.remote.FirestoreRepository
+import com.novamesh.data.remote.FirestoreUser
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -70,7 +71,7 @@ fun SearchUsersScreen(
     val scope = rememberCoroutineScope()
 
     var query by remember { mutableStateOf("") }
-    var results by remember { mutableStateOf<List<FirestoreRepository.FirestoreUser>>(emptyList()) }
+    var results by remember { mutableStateOf<List<FirestoreUser>>(emptyList()) }
     var isSearching by remember { mutableStateOf(false) }
     var hasSearched by remember { mutableStateOf(false) }
     var searchJob by remember { mutableStateOf<Job?>(null) }

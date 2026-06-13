@@ -119,7 +119,7 @@ fun ChatListScreen(
                     name = fc.lastMessage?.text ?: "Chat",
                     avatarUri = null,
                     lastMessage = fc.lastMessage?.text,
-                    lastMessageTimestamp = (fc.lastMessage?.timestamp?.seconds ?: 0) * 1000,
+                    lastMessageTimestamp = fc.lastMessage?.timestamp ?: 0L,
                     lastMessageStatus = null,
                     unreadCount = fc.unreadCount?.values?.sum() ?: 0,
                     isPinned = false,
