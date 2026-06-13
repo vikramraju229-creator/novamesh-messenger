@@ -370,7 +370,9 @@ fun SettingsScreen(
                 try {
                     val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return@LaunchedEffect
                     val doc = FirebaseFirestore.getInstance().collection("users").document(uid).get().await()
-                    blockedUsers = doc.getList<String>("blocked") ?: emptyList()
+                    @Suppress("UNCHECKED_CAST")
+                    val list = doc.get("blocked") as? List<String>
+                    blockedUsers = list ?: emptyList()
                 } catch (_: Exception) { }
                 blockedLoaded = true
             }
