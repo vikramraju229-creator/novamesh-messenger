@@ -83,7 +83,6 @@ import com.novamesh.domain.model.Chat
 import com.novamesh.domain.model.MessageStatus
 import com.novamesh.domain.model.Presence
 import com.novamesh.domain.model.User
-import com.novamesh.domain.model.MessageStatus
 import com.novamesh.data.remote.FirestoreRepository
 import java.text.SimpleDateFormat
 import java.util.Date
