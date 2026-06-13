@@ -91,7 +91,7 @@ class ProfileCache(private val context: Context) {
     /** Save profile to local cache. */
     suspend fun save(profile: ProfileData) {
         context.profileStore.edit { prefs ->
-            prefs[ProfileCacheKeys.CACHED_PROFILE] = json.encodeToString(profile.toCached())
+            prefs[ProfileCacheKeys.CACHED_PROFILE] = json.encodeToString(CachedProfile.serializer(), profile.toCached())
         }
     }
 
