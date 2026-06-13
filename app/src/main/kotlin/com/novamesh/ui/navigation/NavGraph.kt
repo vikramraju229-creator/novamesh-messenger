@@ -1,17 +1,15 @@
 /**
- * NovaMesh main navigation host with auth-aware routing.
+ * NovaMesh main navigation — WhatsApp-style 4-tab layout.
  *
- * - Silver futuristic glassmorphism bottom navigation bar
+ * Tabs: Chats · Updates · People · Profile
+ * - WhatsApp clean bottom nav (no glassmorphism)
  * - Auth-aware routing with Firebase
- * - Camera → Story pipeline fully wired
- * - 30-second story timer support
+ * - Camera → Story pipeline wired
  */
 @file:OptIn(ExperimentalMaterial3Api::class)
 
 package com.novamesh.ui.navigation
 
-import android.content.Context
-import android.net.Uri
 import android.widget.Toast
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.core.tween
@@ -37,13 +35,13 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.ChatBubble
-import androidx.compose.material.icons.filled.Explore
+import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.RotateLeft
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.outlined.CameraAlt
 import androidx.compose.material.icons.outlined.ChatBubble
-import androidx.compose.material.icons.outlined.Explore
+import androidx.compose.material.icons.outlined.People
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -59,18 +57,12 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.geometry.CornerRadius
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
@@ -96,18 +88,11 @@ import com.novamesh.ui.screens.auth.AuthViewModel
 import com.novamesh.ui.screens.camera.CameraScreen
 import com.novamesh.ui.screens.chat.ChatListScreen
 import com.novamesh.ui.screens.contacts.ContactsScreen
-import com.novamesh.ui.screens.discover.DiscoverScreen
 import com.novamesh.ui.screens.onboarding.PermissionsScreen
 import com.novamesh.ui.screens.profile.ProfileScreen
 import com.novamesh.ui.screens.search.SearchUsersScreen
-import com.novamesh.ui.theme.NavBarDark
-import com.novamesh.ui.theme.NavBarLight
-import com.novamesh.ui.theme.NavBarIndicator
-import com.novamesh.ui.theme.NovaGlass
-import com.novamesh.ui.theme.NovaGlassDark
 import com.novamesh.ui.theme.NovaPrimary
 import com.novamesh.ui.theme.NovaSecondary
-import com.novamesh.ui.theme.SilverSurfaceDark
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
@@ -116,16 +101,15 @@ private val Context.dataStore by preferencesDataStore(name = "onboarding_prefs")
 private val ONBOARDING_COMPLETE_KEY = booleanPreferencesKey("onboarding_complete")
 private val PERMISSIONS_SHOWN_KEY = booleanPreferencesKey("permissions_shown")
 
-/** Route constants. */
+/** Route constants — WhatsApp-style: Chats · Updates · People · Profile */
 object Routes {
     const val AUTH = "auth"
     const val PERMISSIONS = "permissions"
     const val CHATS = "chats"
-    const val STORIES = "stories"
-    const val DISCOVER = "discover"
-    const val CONTACTS = "contacts"
-    const val SEARCH_USERS = "search_users"
+    const val UPDATES = "updates"          // "Updates" tab (was "Stories")
+    const val CONTACTS = "contacts"        // "People" tab
     const val PROFILE = "profile"
+    const val SEARCH_USERS = "search_users"
     const val CAMERA = "camera"
     const val SNAP_PREVIEW = "snap_preview/{mediaUri}/{isVideo}"
     const val CHAT_DETAIL = "chat/{chatId}/{chatName}"
@@ -137,7 +121,7 @@ object Routes {
         "snap_preview/$mediaUri/$isVideo"
 }
 
-/** Bottom navigation items using string routes. */
+/** WhatsApp-style 4-tab bottom navigation items. */
 private data class BottomNavItem(
     val label: String,
     val selectedIcon: ImageVector,
@@ -153,15 +137,15 @@ private val bottomNavItems = listOf(
         route = Routes.CHATS,
     ),
     BottomNavItem(
-        label = "Stories",
+        label = "Updates",
         selectedIcon = Icons.Filled.AutoAwesome,
         unselectedIcon = Icons.Outlined.CameraAlt,
-        route = Routes.STORIES,
+        route = Routes.UPDATES,
     ),
     BottomNavItem(
         label = "People",
-        selectedIcon = Icons.Filled.Person,
-        unselectedIcon = Icons.Outlined.Person,
+        selectedIcon = Icons.Filled.People,
+        unselectedIcon = Icons.Outlined.People,
         route = Routes.CONTACTS,
     ),
     BottomNavItem(
@@ -228,9 +212,9 @@ fun NovaMeshNavHost() {
         return
     }
 
-    // Determine if bottom bar should be visible
+    // WhatsApp-style: bottom bar on main tabs only
     val showBottomBar = currentDestination?.route in listOf(
-        Routes.CHATS, Routes.STORIES, Routes.DISCOVER, Routes.PROFILE,
+        Routes.CHATS, Routes.UPDATES, Routes.CONTACTS, Routes.PROFILE,
     )
 
     Scaffold(
@@ -330,7 +314,7 @@ fun NovaMeshNavHost() {
                 )
             }
 
-            composable(Routes.STORIES) {
+            composable(Routes.UPDATES) {
                 StoriesScreen(
                     onStoryClick = { userId, storyId ->
                         navController.navigate(Routes.storyViewer(userId, storyId))
@@ -338,12 +322,6 @@ fun NovaMeshNavHost() {
                     onCameraClick = {
                         navController.navigate(Routes.CAMERA)
                     },
-                )
-            }
-
-            composable(Routes.DISCOVER) {
-                DiscoverScreen(
-                    onSearchUsers = { navController.navigate(Routes.SEARCH_USERS) },
                 )
             }
 
@@ -442,7 +420,7 @@ fun NovaMeshNavHost() {
                         Toast
                             .makeText(context, "Story posted! (30s)", Toast.LENGTH_SHORT)
                             .show()
-                        navController.popBackStack(Routes.STORIES, inclusive = false)
+                        navController.popBackStack(Routes.UPDATES, inclusive = false)
                     },
                 )
             }
@@ -451,17 +429,12 @@ fun NovaMeshNavHost() {
 }
 
 // ═════════════════════════════════════════════════════════════════════════════
-// Silver Futuristic Glassmorphism Bottom Navigation Bar
+// WhatsApp-style Clean Bottom Navigation Bar
 // ═════════════════════════════════════════════════════════════════════════════
 
 /**
- * NovaMesh silver futuristic bottom navigation bar with glassmorphism effect.
- *
- * Features:
- * - Translucent silver/glass background with blur effect
- * - Active indicator with Nova purple gradient
- * - Subtle top border glow
- * - Animated icon transitions
+ * Clean WhatsApp-style bottom navigation with 4 tabs.
+ * Simple background, no glassmorphism.
  */
 @Composable
 private fun NovaBottomNavigationBar(
@@ -469,35 +442,12 @@ private fun NovaBottomNavigationBar(
     currentRoute: String?,
     onItemClick: (BottomNavItem) -> Unit,
 ) {
-    val isDark = MaterialTheme.colorScheme.background == SilverSurfaceDark
-    val glassColor = if (isDark) NovaGlassDark else NovaGlass
-
     NavigationBar(
         modifier = Modifier
             .fillMaxWidth()
-            .navigationBarsPadding()
-            .drawBehind {
-                // Silver glassmorphism background
-                drawRoundRect(
-                    color = glassColor,
-                    cornerRadius = CornerRadius(0f, 0f),
-                )
-                // Top glow border
-                drawLine(
-                    brush = Brush.horizontalGradient(
-                        colors = listOf(
-                            Color.Transparent,
-                            NavBarIndicator.copy(alpha = 0.3f),
-                            Color.Transparent,
-                        ),
-                    ),
-                    start = Offset(0f, 0f),
-                    end = Offset(size.width, 0f),
-                    strokeWidth = 1.dp.toPx(),
-                )
-            },
+            .navigationBarsPadding(),
         tonalElevation = 0.dp,
-        containerColor = Color.Transparent,
+        containerColor = MaterialTheme.colorScheme.surface,
     ) {
         items.forEach { item ->
             val isSelected = currentRoute == item.route
@@ -506,25 +456,15 @@ private fun NovaBottomNavigationBar(
                 selected = isSelected,
                 onClick = { onItemClick(item) },
                 icon = {
-                    Box(
+                    Icon(
+                        imageVector = if (isSelected) {
+                            item.selectedIcon
+                        } else {
+                            item.unselectedIcon
+                        },
+                        contentDescription = item.label,
                         modifier = Modifier.size(24.dp),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Icon(
-                            imageVector = if (isSelected) {
-                                item.selectedIcon
-                            } else {
-                                item.unselectedIcon
-                            },
-                            contentDescription = item.label,
-                            tint = if (isSelected) {
-                                NavBarIndicator
-                            } else {
-                                MaterialTheme.colorScheme.onSurfaceVariant
-                                    .copy(alpha = 0.6f)
-                            },
-                        )
-                    }
+                    )
                 },
                 label = {
                     Text(
@@ -534,11 +474,11 @@ private fun NovaBottomNavigationBar(
                     )
                 },
                 colors = NavigationBarItemDefaults.colors(
-                    selectedIconColor = NavBarIndicator,
-                    selectedTextColor = NavBarIndicator,
-                    unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    selectedIconColor = NovaPrimary,
+                    selectedTextColor = NovaPrimary,
+                    unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
                     unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                    indicatorColor = NavBarIndicator.copy(alpha = 0.12f),
+                    indicatorColor = NovaPrimary.copy(alpha = 0.12f),
                 ),
                 alwaysShowLabel = true,
             )

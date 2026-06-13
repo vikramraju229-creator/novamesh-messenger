@@ -105,13 +105,13 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.novamesh.data.remote.FirestoreRepository
 import com.novamesh.domain.model.Message
 import com.novamesh.domain.model.MessageContent
 import com.novamesh.domain.model.MessageStatus
 import com.novamesh.domain.model.MessageType
 import com.novamesh.domain.model.Presence
 import com.novamesh.domain.model.User
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -149,38 +149,32 @@ fun ChatDetailScreen(
     var recordingDuration by remember { mutableLongStateOf(0L) }
     var isSwipeToReplyActive by remember { mutableStateOf(false) }
 
-    // Populate mock messages on first composition
-    LaunchedEffect(chatId) {
-        messages.addAll(mockMessages(chatId))
-    }
+    // ─── Real messages from Firestore ────────────────────────────────────
+    val repository = remember { FirestoreRepository() }
 
-    // Simulate typing indicator appearing/disappearing
-    LaunchedEffect(Unit) {
-        while (true) {
-            delay(8_000)
-            isTyping = true
-            delay(4_000)
-            isTyping = false
-            delay(12_000)
+    LaunchedEffect(chatId) {
+        repository.observeMessages(chatId).collect { firestoreMessages ->
+            messages.clear()
+            messages.addAll(firestoreMessages.map { fm ->
+                Message(
+                    id = fm.id,
+                    chatId = fm.chatId,
+                    senderId = fm.senderId,
+                    senderName = fm.senderName,
+                    content = MessageContent.Text(fm.text),
+                    type = MessageType.TEXT,
+                    timestamp = fm.timestamp,
+                    status = when (fm.status) {
+                        "sent" -> MessageStatus.SENT
+                        "delivered" -> MessageStatus.DELIVERED
+                        "read" -> MessageStatus.READ
+                        else -> MessageStatus.SENT
+                    },
+                    readBy = emptyList(),
+                    deliveryStatus = com.novamesh.domain.model.DeliveryStatus.DELIVERED,
+                )
+            })
         }
-    }
-
-    // Simulate an incoming message after a few seconds
-    LaunchedEffect(chatId) {
-        delay(6_000)
-        val incoming = Message(
-            id = "incoming_${System.currentTimeMillis()}",
-            chatId = chatId,
-            senderId = "user_2",
-            senderName = "Alice",
-            content = MessageContent.Text("Hey! How's it going? 😊"),
-            type = MessageType.TEXT,
-            timestamp = System.currentTimeMillis(),
-            status = MessageStatus.DELIVERED,
-            readBy = emptyList(),
-            deliveryStatus = com.novamesh.domain.model.DeliveryStatus.DELIVERED,
-        )
-        messages.add(0, incoming) // prepend because reverse layout
     }
 
     // Auto-scroll to bottom (newest message) on list changes
@@ -211,21 +205,10 @@ fun ChatDetailScreen(
                 onTextChange = { messageInput = it },
                 onSend = {
                     if (messageInput.isNotBlank()) {
-                        val newMsg = Message(
-                            id = "outgoing_${System.currentTimeMillis()}",
-                            chatId = chatId,
-                            senderId = "me",
-                            senderName = "Me",
-                            content = MessageContent.Text(messageInput.trim()),
-                            type = MessageType.TEXT,
-                            timestamp = System.currentTimeMillis(),
-                            status = MessageStatus.SENT,
-                            readBy = emptyList(),
-                            deliveryStatus = com.novamesh.domain.model.DeliveryStatus.SENT,
-                        )
-                        messages.add(0, newMsg)
+                        val text = messageInput.trim()
                         messageInput = ""
                         scope.launch {
+                            repository.sendMessage(chatId, text)
                             listState.animateScrollToItem(0)
                         }
                     }
@@ -245,26 +228,9 @@ fun ChatDetailScreen(
                 },
                 onStopRecording = {
                     isRecording = false
-                    // Add a voice message mock
-                    val voiceMsg = Message(
-                        id = "voice_${System.currentTimeMillis()}",
-                        chatId = chatId,
-                        senderId = "me",
-                        senderName = "Me",
-                        content = MessageContent.Voice(
-                            uri = "file:///recording_${System.currentTimeMillis()}.ogg",
-                            durationMs = recordingDuration,
-                            waveform = listOf(0.1f, 0.3f, 0.5f, 0.7f, 0.4f, 0.6f, 0.8f, 0.5f, 0.3f),
-                        ),
-                        type = MessageType.VOICE,
-                        timestamp = System.currentTimeMillis(),
-                        status = MessageStatus.SENT,
-                        readBy = emptyList(),
-                        deliveryStatus = com.novamesh.domain.model.DeliveryStatus.SENT,
-                    )
-                    messages.add(0, voiceMsg)
                     recordingDuration = 0L
                     scope.launch {
+                        repository.sendMessage(chatId, "🎤 Voice message")
                         listState.animateScrollToItem(0)
                     }
                 },
@@ -583,21 +549,17 @@ private fun SwipeableMessage(
 // ═════════════════════════════════════════════════════════════════════════════
 
 /**
- * Displays a single message as a chat bubble.
+ * Displays a single message as a chat bubble — WhatsApp style.
  *
- * - Outgoing messages (sent by the current user) appear right-aligned with a
- *   primary-container background.
- * - Incoming messages appear left-aligned with a surface-container background.
- * - System messages are displayed as centered, muted text.
- *
- * Each bubble includes the message content, a relative timestamp, delivery
- * status icon, and a reactions row.
+ * - Outgoing: right-aligned, green (#DCF8C6) background, black text
+ * - Incoming: left-aligned, white/gray background, black text
+ * - System: centered muted text
  */
 @Composable
 private fun MessageBubble(message: Message) {
-    // Identify outgoing messages — in production this compares against the
-    // authenticated user's ID. For mock purposes we treat "me" as the local user.
-    val isOutgoing = message.senderId == "me"
+    // Identify outgoing — compare against Firebase Auth UID
+    val currentUserId = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.uid
+    val isOutgoing = message.senderId == currentUserId || message.senderId == "me"
 
     // System messages get a completely different layout
     if (message.type == MessageType.SYSTEM) {
@@ -612,11 +574,12 @@ private fun MessageBubble(message: Message) {
         bottomEnd = if (isOutgoing) 4.dp else 16.dp,
     )
 
+    // WhatsApp colors: green for sent, white/gray for received
     val bubbleColor by animateColorAsState(
         targetValue = if (isOutgoing)
-            MaterialTheme.colorScheme.primaryContainer
+            Color(0xFFDCF8C6)    // WhatsApp sent green
         else
-            MaterialTheme.colorScheme.surfaceVariant,
+            Color(0xFFFFFFFF),    // WhatsApp received white
         animationSpec = tween(200),
         label = "bubbleColor",
     )
@@ -699,10 +662,8 @@ private fun MessageContentDisplay(
     content: MessageContent,
     isOutgoing: Boolean,
 ) {
-    val contentColor = if (isOutgoing)
-        MaterialTheme.colorScheme.onPrimaryContainer
-    else
-        MaterialTheme.colorScheme.onSurface
+    // WhatsApp: black text on both green (sent) and white (received)
+    val contentColor = MaterialTheme.colorScheme.onSurface
 
     when (content) {
         is MessageContent.Text -> {
@@ -1487,153 +1448,4 @@ private fun formatFileSize(bytes: Long): String {
     }
 }
 
-// ═════════════════════════════════════════════════════════════════════════════
-// Mock data — replaces repository layer during prototyping
-// ═════════════════════════════════════════════════════════════════════════════
 
-/**
- * Returns a hardcoded list of sample messages for a given [chatId].
- *
- * Includes a variety of message types to exercise all UI branches:
- * text, image, video, voice, system events, and reactions.
- */
-private fun mockMessages(chatId: String): List<Message> {
-    val now = System.currentTimeMillis()
-    val minute = 60_000L
-    val hour = 60 * minute
-
-    return listOf(
-        // ── Older messages (appear higher up, before reverse) ──────────
-        Message(
-            id = "${chatId}_sys_1",
-            chatId = chatId,
-            senderId = "system",
-            senderName = "System",
-            content = MessageContent.System(
-                text = "Messages are end-to-end encrypted. Tap for more info.",
-                action = com.novamesh.domain.model.SystemAction.GENERIC,
-            ),
-            type = MessageType.SYSTEM,
-            timestamp = now - 2 * hour - 30 * minute,
-            status = MessageStatus.SENT,
-            readBy = emptyList(),
-            deliveryStatus = com.novamesh.domain.model.DeliveryStatus.SENT,
-        ),
-        Message(
-            id = "${chatId}_img_1",
-            chatId = chatId,
-            senderId = "user_2",
-            senderName = "Alice",
-            content = MessageContent.Image(
-                uri = "file:///photos/sunset.jpg",
-                thumbnailUri = null,
-                caption = "Look at this sunset! 🌅",
-            ),
-            type = MessageType.IMAGE,
-            timestamp = now - 2 * hour - 20 * minute,
-            status = MessageStatus.READ,
-            reactions = mapOf("user_1" to "🔥", "user_3" to "🔥", "user_4" to "❤️"),
-            readBy = listOf("user_1", "user_3"),
-            deliveryStatus = com.novamesh.domain.model.DeliveryStatus.READ,
-        ),
-        Message(
-            id = "${chatId}_text_1",
-            chatId = chatId,
-            senderId = "me",
-            senderName = "Me",
-            content = MessageContent.Text("That's beautiful! Where was this taken?"),
-            type = MessageType.TEXT,
-            timestamp = now - 2 * hour - 15 * minute,
-            status = MessageStatus.READ,
-            reactions = mapOf("user_2" to "👍"),
-            readBy = listOf("user_2"),
-            deliveryStatus = com.novamesh.domain.model.DeliveryStatus.READ,
-        ),
-        Message(
-            id = "${chatId}_text_2",
-            chatId = chatId,
-            senderId = "user_2",
-            senderName = "Alice",
-            content = MessageContent.Text("It's from the hike last weekend! 📸"),
-            type = MessageType.TEXT,
-            timestamp = now - 2 * hour - 10 * minute,
-            status = MessageStatus.READ,
-            reactions = mapOf("me" to "❤️"),
-            readBy = listOf("me"),
-            deliveryStatus = com.novamesh.domain.model.DeliveryStatus.READ,
-        ),
-        Message(
-            id = "${chatId}_voice_1",
-            chatId = chatId,
-            senderId = "user_2",
-            senderName = "Alice",
-            content = MessageContent.Voice(
-                uri = "file:///voice/msg_${chatId}_001.ogg",
-                durationMs = 12_000,
-                waveform = listOf(0.1f, 0.4f, 0.7f, 0.9f, 0.5f, 0.8f, 0.3f),
-            ),
-            type = MessageType.VOICE,
-            timestamp = now - hour - 30 * minute,
-            status = MessageStatus.DELIVERED,
-            readBy = emptyList(),
-            deliveryStatus = com.novamesh.domain.model.DeliveryStatus.DELIVERED,
-        ),
-        Message(
-            id = "${chatId}_text_3",
-            chatId = chatId,
-            senderId = "me",
-            senderName = "Me",
-            content = MessageContent.Text("Great, let's plan another one soon!"),
-            type = MessageType.TEXT,
-            timestamp = now - hour - 25 * minute,
-            status = MessageStatus.DELIVERED,
-            readBy = emptyList(),
-            deliveryStatus = com.novamesh.domain.model.DeliveryStatus.DELIVERED,
-        ),
-        Message(
-            id = "${chatId}_sys_2",
-            chatId = chatId,
-            senderId = "system",
-            senderName = "System",
-            content = MessageContent.System(
-                text = "Disappearing messages enabled (30s)",
-                action = com.novamesh.domain.model.SystemAction.DISAPPEARING_MESSAGES_ENABLED,
-            ),
-            type = MessageType.SYSTEM,
-            timestamp = now - 30 * minute,
-            status = MessageStatus.SENT,
-            readBy = emptyList(),
-            deliveryStatus = com.novamesh.domain.model.DeliveryStatus.SENT,
-        ),
-        Message(
-            id = "${chatId}_video_1",
-            chatId = chatId,
-            senderId = "user_2",
-            senderName = "Alice",
-            content = MessageContent.Video(
-                uri = "file:///videos/timelapse.mp4",
-                thumbnailUri = null,
-                durationMs = 45_000,
-            ),
-            type = MessageType.VIDEO,
-            timestamp = now - 15 * minute,
-            status = MessageStatus.DELIVERED,
-            reactions = mapOf("me" to "🔥", "user_3" to "🔥"),
-            readBy = emptyList(),
-            deliveryStatus = com.novamesh.domain.model.DeliveryStatus.DELIVERED,
-        ),
-        // ── Newest message (appears at bottom after reverse) ───────────
-        Message(
-            id = "${chatId}_text_4",
-            chatId = chatId,
-            senderId = "me",
-            senderName = "Me",
-            content = MessageContent.Text("Awesome video! 🔥"),
-            type = MessageType.TEXT,
-            timestamp = now - 5 * minute,
-            status = MessageStatus.SENT,
-            readBy = emptyList(),
-            deliveryStatus = com.novamesh.domain.model.DeliveryStatus.SENT,
-        ),
-    )
-}
