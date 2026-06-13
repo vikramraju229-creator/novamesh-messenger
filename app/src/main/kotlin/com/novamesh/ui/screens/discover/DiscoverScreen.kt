@@ -77,6 +77,7 @@ private val categories = listOf(
 @Composable
 fun DiscoverScreen(
     onChannelClick: (channelId: String, channelName: String) -> Unit = { _, _ -> },
+    onSearchUsers: () -> Unit = {},
 ) {
     val repository = remember { FirestoreRepository() }
     val scope = rememberCoroutineScope()
@@ -160,6 +161,53 @@ fun DiscoverScreen(
                     }
                 }
             }
+
+            // Find People section
+            item(key = "find_people") {
+                Card(
+                    onClick = onSearchUsers,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 4.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
+                    ),
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Person,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(32.dp),
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                "Find People",
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.SemiBold,
+                            )
+                            Text(
+                                "Search for other NovaMesh users by name or email",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                        Icon(
+                            imageVector = Icons.Default.Search,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
 
             // Channel list
             if (filteredChannels.isEmpty()) {

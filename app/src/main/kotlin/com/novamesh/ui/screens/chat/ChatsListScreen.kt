@@ -83,6 +83,8 @@ import com.novamesh.domain.model.Chat
 import com.novamesh.domain.model.MessageStatus
 import com.novamesh.domain.model.Presence
 import com.novamesh.domain.model.User
+import com.novamesh.data.remote.FirestoreRepository
+import com.google.firebase.firestore.FirebaseFirestore
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -101,9 +103,39 @@ fun ChatListScreen(
 ) {
     // ─── State ───────────────────────────────────────────────────────────────
     var searchQuery by remember { mutableStateOf("") }
-    val chats = remember { mockChats() }
-
     val context = LocalContext.current
+
+    // ─── Real chats from Firestore ────────────────────────────────────────────
+    val firestore = remember { FirebaseFirestore.getInstance() }
+    val repository = remember { FirestoreRepository(firestore) }
+    var realChats by remember { mutableStateOf<List<Chat>>(emptyList()) }
+    var isLoading by remember { mutableStateOf(true) }
+
+    LaunchedEffect(Unit) {
+        repository.observeChats().collect { firestoreChats ->
+            realChats = firestoreChats.map { fc ->
+                Chat(
+                    id = fc.id,
+                    name = fc.lastMessage?.text ?: "Chat",
+                    avatarUri = null,
+                    lastMessage = fc.lastMessage?.text,
+                    lastMessageTimestamp = (fc.lastMessage?.timestamp?.seconds ?: 0) * 1000,
+                    lastMessageStatus = null,
+                    unreadCount = fc.unreadCount?.values?.sum() ?: 0,
+                    isPinned = false,
+                    isMuted = false,
+                    participants = emptyList(),
+                    isGroup = (fc.participants?.size ?: 0) > 2,
+                    disappearingTimerSeconds = null,
+                    createdAt = 0L,
+                )
+            }
+            isLoading = false
+        }
+    }
+
+    val chats = realChats
+
     val cameraPermissionState = rememberPermissionState(Manifest.permission.CAMERA)
 
     // Filter chats based on search query

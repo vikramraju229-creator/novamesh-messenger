@@ -95,9 +95,10 @@ import com.novamesh.ui.screens.auth.AuthScreen
 import com.novamesh.ui.screens.auth.AuthViewModel
 import com.novamesh.ui.screens.camera.CameraScreen
 import com.novamesh.ui.screens.chat.ChatListScreen
+import com.novamesh.ui.screens.contacts.ContactsScreen
 import com.novamesh.ui.screens.discover.DiscoverScreen
-import com.novamesh.ui.screens.onboarding.PermissionsScreen
 import com.novamesh.ui.screens.profile.ProfileScreen
+import com.novamesh.ui.screens.search.SearchUsersScreen
 import com.novamesh.ui.theme.NavBarDark
 import com.novamesh.ui.theme.NavBarLight
 import com.novamesh.ui.theme.NavBarIndicator
@@ -121,6 +122,8 @@ object Routes {
     const val CHATS = "chats"
     const val STORIES = "stories"
     const val DISCOVER = "discover"
+    const val CONTACTS = "contacts"
+    const val SEARCH_USERS = "search_users"
     const val PROFILE = "profile"
     const val CAMERA = "camera"
     const val SNAP_PREVIEW = "snap_preview/{mediaUri}/{isVideo}"
@@ -155,10 +158,10 @@ private val bottomNavItems = listOf(
         route = Routes.STORIES,
     ),
     BottomNavItem(
-        label = "Discover",
-        selectedIcon = Icons.Filled.Explore,
-        unselectedIcon = Icons.Outlined.Explore,
-        route = Routes.DISCOVER,
+        label = "People",
+        selectedIcon = Icons.Filled.Person,
+        unselectedIcon = Icons.Outlined.Person,
+        route = Routes.CONTACTS,
     ),
     BottomNavItem(
         label = "Profile",
@@ -338,7 +341,28 @@ fun NovaMeshNavHost() {
             }
 
             composable(Routes.DISCOVER) {
-                DiscoverScreen()
+                DiscoverScreen(
+                    onSearchUsers = { navController.navigate(Routes.SEARCH_USERS) },
+                )
+            }
+
+            composable(Routes.CONTACTS) {
+                ContactsScreen(
+                    onChatClick = { chatId, chatName ->
+                        navController.navigate(Routes.chatDetail(chatId, chatName))
+                    },
+                    onBack = { navController.popBackStack() },
+                )
+            }
+
+            composable(Routes.SEARCH_USERS) {
+                SearchUsersScreen(
+                    onUserClick = { userId, userName ->
+                        navController.navigate(Routes.chatDetail(userId, userName))
+                        navController.popBackStack(Routes.CHATS, false)
+                    },
+                    onBack = { navController.popBackStack() },
+                )
             }
 
             composable(Routes.PROFILE) {
